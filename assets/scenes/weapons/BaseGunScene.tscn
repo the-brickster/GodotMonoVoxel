@@ -1,0 +1,63 @@
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://src/weapons/BaseGunScene.gd" type="Script" id=1]
+
+[node name="BaseShootableGun" type="Spatial"]
+
+script = ExtResource( 1 )
+moveAmount = 0
+smoothAmount = 0
+maxAmount = 0
+weaponHitEffect = null
+ejectingBrass = null
+fireRate = 100
+magSize = 30
+maxAmmo = 300
+brassCount = 100
+weaponSpread = 1
+weaponRange = 100
+tracerStartThickness = 0.01
+tracerEndThickness = 0.01
+startTracerColor = Color( 244, 66, 66, 1 )
+endTracerColor = Color( 244, 66, 66, 1 )
+
+[node name="GunModel" type="Spatial" parent="." index="0"]
+
+[node name="MuzzleFlash" type="Spatial" parent="." index="1"]
+
+[node name="MuzzleSprite" type="Sprite3D" parent="MuzzleFlash" index="0"]
+
+layers = 1
+material_override = null
+cast_shadow = 1
+extra_cull_margin = 0.0
+use_in_baked_light = false
+lod_min_distance = 0.0
+lod_min_hysteresis = 0.0
+lod_max_distance = 0.0
+lod_max_hysteresis = 0.0
+centered = true
+offset = Vector2( 0, 0 )
+flip_h = false
+flip_v = false
+modulate = Color( 1, 1, 1, 1 )
+opacity = 1.0
+pixel_size = 0.01
+axis = 2
+transparent = true
+shaded = false
+double_sided = true
+alpha_cut = 0
+texture = null
+vframes = 1
+hframes = 1
+frame = 0
+region_enabled = false
+region_rect = Rect2( 0, 0, 0, 0 )
+_sections_unfolded = [ "Animation", "Region" ]
+
+[node name="EjectionPort" type="Position3D" parent="." index="2"]
+
+[node name="TracerPoint" type="Position3D" parent="." index="3"]
+
+

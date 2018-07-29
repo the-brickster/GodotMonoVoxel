@@ -1,0 +1,101 @@
+[gd_scene load_steps=3 format=2]
+
+[sub_resource type="GDScript" id=1]
+
+script/source = "extends RigidBody
+
+var X = 0.00
+var Y = 0.00
+var speed = 0.2 #Player speed
+
+
+
+func _fixed_process(delta):
+	#Player movement
+	if Input.is_key_pressed(KEY_W):
+		translate(Vector3(0, 0, -speed))
+	if Input.is_key_pressed(KEY_S):
+		translate(Vector3(0, 0, speed))
+	if Input.is_key_pressed(KEY_A):
+		translate(Vector3(-speed, 0, 0))
+	if Input.is_key_pressed(KEY_D):
+		translate(Vector3(speed, 0, 0))
+
+func _input(event):
+	#Camera motion
+	if (event is InputEventMouseMotion):
+		X += event.relative.x*0.005
+		self.set_rotation(Vector3(0, -X, 0))
+		Y += event.relative.y*0.005
+		if(not Y > 1.5):
+			get_node(\"Camera\").set_rotation(Vector3(-Y,0,0))
+		else:
+			Y = 1.5
+		if(not Y < -1.5):
+			get_node(\"Camera\").set_rotation(Vector3(-Y,0,0))
+		else:
+			Y = -1.5
+		#Show mouse
+		if Input.is_key_pressed(KEY_ESCAPE):
+			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+func _ready():
+	#Hide and capture mouse
+	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	set_fixed_process(true)
+	set_process_input(true)
+"
+
+[sub_resource type="CapsuleShape" id=2]
+
+radius = 0.6
+height = 1.0
+
+[node name="FirstPerson" type="RigidBody"]
+
+input_ray_pickable = true
+input_capture_on_drag = false
+collision_layer = 1
+collision_mask = 1
+mode = 2
+mass = 1.0
+friction = 1.0
+bounce = 0.0
+gravity_scale = 1.0
+custom_integrator = false
+continuous_cd = false
+contacts_reported = 0
+contact_monitor = true
+sleeping = false
+can_sleep = true
+axis_lock = 0
+linear_velocity = Vector3( 0, 0, 0 )
+linear_damp = -1.0
+angular_velocity = Vector3( 0, 0, 0 )
+angular_damp = -1.0
+script = SubResource( 1 )
+_sections_unfolded = [ "Angular", "Collision", "Linear", "Pause", "Visibility" ]
+
+[node name="CollisionShape" type="CollisionShape" parent="."]
+
+transform = Transform( 1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 1, 0 )
+shape = SubResource( 2 )
+disabled = false
+_sections_unfolded = [ "Transform" ]
+
+[node name="Camera" type="Camera" parent="."]
+
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.38718, 0 )
+projection = 0
+fov = 65.0
+near = 0.1
+far = 100.0
+keep_aspect = 1
+current = false
+cull_mask = 1048575
+environment = null
+h_offset = 0.0
+v_offset = 0.0
+doppler/tracking = 0
+
+

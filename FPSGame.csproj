@@ -1,0 +1,96 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{0A56236E-D20F-4A36-A245-E5FCE9C7EDD9}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <OutputPath>.mono\temp\bin\$(Configuration)</OutputPath>
+    <RootNamespace>FPSGame</RootNamespace>
+    <AssemblyName>FPSGame</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <BaseIntermediateOutputPath>.mono\temp\obj</BaseIntermediateOutputPath>
+    <IntermediateOutputPath>$(BaseIntermediateOutputPath)\$(Configuration)</IntermediateOutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>portable</DebugType>
+    <Optimize>false</Optimize>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>portable</DebugType>
+    <Optimize>true</Optimize>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Tools|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>portable</DebugType>
+    <Optimize>false</Optimize>
+    <DefineConstants>DEBUG;TOOLS;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Crc32C.NET, Version=1.0.5.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\Crc32C.NET.1.0.5.0\lib\net20\Crc32C.NET.dll</HintPath>
+    </Reference>
+    <Reference Include="GodotSharp">
+      <HintPath>$(ProjectDir)\.mono\assemblies\GodotSharp.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="GodotSharpEditor" Condition=" '$(Configuration)' == 'Tools' ">
+      <HintPath>$(ProjectDir)\.mono\assemblies\GodotSharpEditor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Snappy.NET, Version=1.1.1.8, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\Snappy.NET.1.1.1.8\lib\net45\Snappy.NET.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="assets\scenes\effects\SparkParticleRound.cs" />
+    <Compile Include="assets\scenes\levels\freeCamTest.cs" />
+    <Compile Include="assets\scenes\projectiles\BulletTest.cs" />
+    <Compile Include="assets\scenes\ui\hud\HUDCanvas.cs" />
+    <Compile Include="assets\scenes\weapons\ejectingBrass\EjectingBrassTest.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="src\Common\GlobalGameSystemsManager.cs" />
+    <Compile Include="src\Common\ObjectPool\AbstractObjectPool.cs" />
+    <Compile Include="src\Common\ObjectPool\HitEffectObjectPool.cs" />
+    <Compile Include="src\Common\ObjectPool\GameObjPool.cs" />
+    <Compile Include="src\goxlap\blockMesher.cs" />
+    <Compile Include="Test.cs" />
+    <Content Include="src\Common\ObjectPool\pool.gd" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="src\entities\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+    <None Include="src\FPSController.gd" />
+    <None Include="src\Pawn.gd" />
+    <None Include="src\Player.gd" />
+    <None Include="src\playerController.gd" />
+    <None Include="src\weapons\M81.gd" />
+    <None Include="src\weapons\ViewableWeapon.gd" />
+    <Content Include="src\Common\Utils\Shaders\default.shader" />
+    <Compile Include="src\Common\Utils\LineRenderer.cs" />
+    <Compile Include="src\goxlap\blockTest.cs" />
+    <Compile Include="src\goxlap\chunk.cs" />
+    <Compile Include="src\goxlap\voxelUtils.cs" />
+    <Compile Include="src\goxlap\voxelworld.cs" />
+    <Compile Include="src\goxlap\chunkManager.cs" />
+    <Content Include="FPSGame.csproj.user" />
+    <Compile Include="src\goxlap\fastnoise.cs" />
+    <Content Include=".vscode\launch.json" />
+    <Content Include=".gitignore" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+</Project>
