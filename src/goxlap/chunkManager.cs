@@ -28,8 +28,10 @@ namespace FPSGame.src.Common.goxlap
         public static Random rand = new Random();
         public BlockMesher mesher;
 
+        private GodotTaskScheduler taskMan;
+
         public ChunkManager(int world_x_size, int world_y_size, int world_z_size,
-        int chunk_size, float vox_size, out ChunkStruct[,,] chunkArr)
+        int chunk_size, float vox_size, out ChunkStruct[,,] chunkArr, ref GodotTaskScheduler manager)
         {
             this.World_X_Size = world_x_size;
             this.World_Y_Size = world_y_size;
@@ -54,10 +56,12 @@ namespace FPSGame.src.Common.goxlap
                                                 new Vector3(VOX_SIZE,VOX_SIZE,VOX_SIZE),
                                                 new Vector3(0,VOX_SIZE,VOX_SIZE)};
             mesher = new BlockMesher(CHUNK_X_COUNT, CHUNK_Y_COUNT, CHUNK_Z_COUNT, CHUNK_SIZE, VOX_SIZE);
+            this.taskMan = manager;
         }
 
         public async Task Initialize()
         {
+
             var isReady = false;
             Console.WriteLine("Curr Thread ID: " + System.Threading.Thread.CurrentThread.ManagedThreadId);
             isReady = await Task.Run(() => AsyncVoxelDataInitialize());
@@ -65,7 +69,8 @@ namespace FPSGame.src.Common.goxlap
             {
                 isReady = false;
                 Console.WriteLine("Checking done");
-                isReady = await Task.Run(() => CreateMeshs());
+                
+                isReady = await Task.Factory.StartNew(CreateMeshs,TaskCreationOptions.LongRunning);
                 Console.WriteLine("Checking done...2");
             }
         }
@@ -122,7 +127,8 @@ namespace FPSGame.src.Common.goxlap
             return true;
         }
 
-        [Obsolete]
+/*
+ [Obsolete]
         private void CreateChunkMesh(ref ChunkStruct c)
         {
             c.chunkData = SnappyCodec.Uncompress(c.compChunkData);
@@ -148,7 +154,7 @@ namespace FPSGame.src.Common.goxlap
             c.surfaceTool.Clear();
             c.chunkData = new byte[1];
         }
-
+        [Obsolete]
         private void createFaces(int x, int y, int z, int Dx, int Dy, int Dz,
         ref SurfaceTool surfaceTool, ref ChunkStruct c)
         {
@@ -249,6 +255,8 @@ namespace FPSGame.src.Common.goxlap
         // private bool isInData(int x, int y, int z, int Dx, int Dy, int Dz){
 
         // }
+ */
+       
     }
     struct ChunkStruct
     {

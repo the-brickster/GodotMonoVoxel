@@ -15,9 +15,15 @@ namespace FPSGame.src.goxlap
         float VOX_SIZE;
         private Vector3[] vertices;
         public VoxelVolume volume { get; set; }
+        public SpatialMaterial mat;
 
         public BlockMesher(int CHUNK_X_COUNT, int CHUNK_Y_COUNT, int CHUNK_Z_COUNT, int CHUNK_SIZE, float VOX_SIZE)
         {
+            mat = new SpatialMaterial();
+            mat.VertexColorUseAsAlbedo = true;
+            mat.VertexColorIsSrgb = true;
+            mat.FlagsVertexLighting = true;
+
             this.CHUNK_X_COUNT = CHUNK_X_COUNT;
             this.CHUNK_Y_COUNT = CHUNK_Y_COUNT;
             this.CHUNK_Z_COUNT = CHUNK_Z_COUNT;
@@ -39,6 +45,7 @@ namespace FPSGame.src.goxlap
         {
             c.chunkData = SnappyCodec.Uncompress(c.compChunkData);
             c.surfaceTool.Begin(Mesh.PrimitiveType.Triangles);
+            c.surfaceTool.SetMaterial(mat);
             for (int i = 0; i < CHUNK_SIZE; i++)
             {
                 for (int j = 0; j < CHUNK_SIZE; j++)
@@ -70,8 +77,8 @@ namespace FPSGame.src.goxlap
             voxPosition.z = voxPosition.z + (Dz * CHUNK_SIZE * VOX_SIZE);
             if (canCreateFace(x, y - 1, z, ref c))
             {
-
                 surfaceTool.AddNormal(new Vector3(0.0f, -1.0f, 0.0f));
+                surfaceTool.AddColor(new Color(1.0f, 1.0f, .7f, 1f));
                 surfaceTool.AddVertex(vertices[1] + voxPosition);
                 surfaceTool.AddVertex(vertices[3] + voxPosition);
                 surfaceTool.AddVertex(vertices[2] + voxPosition);
@@ -83,6 +90,7 @@ namespace FPSGame.src.goxlap
             if (canCreateFace(x, y + 1, z, ref c))
             {
                 surfaceTool.AddNormal(new Vector3(0.0f, 1.0f, 0.0f));
+                surfaceTool.AddColor(new Color(0.7f, 0.0f, .7f, 1f));
                 surfaceTool.AddVertex(vertices[4] + voxPosition);
                 surfaceTool.AddVertex(vertices[5] + voxPosition);
                 surfaceTool.AddVertex(vertices[7] + voxPosition);
@@ -94,6 +102,7 @@ namespace FPSGame.src.goxlap
             if (canCreateFace(x + 1, y, z, ref c))
             {
                 surfaceTool.AddNormal(new Vector3(1.0f, 0.0f, 0.0f));
+                surfaceTool.AddColor(new Color(1f, 1f, 1f, 1f));
                 surfaceTool.AddVertex(vertices[2] + voxPosition);
                 surfaceTool.AddVertex(vertices[5] + voxPosition);
                 surfaceTool.AddVertex(vertices[1] + voxPosition);
@@ -105,6 +114,7 @@ namespace FPSGame.src.goxlap
             if (canCreateFace(x - 1, y, z, ref c))
             {
                 surfaceTool.AddNormal(new Vector3(-1.0f, 0.0f, 0.0f));
+                surfaceTool.AddColor(new Color(1f, 1f, 1f, 1f));
                 surfaceTool.AddVertex(vertices[0] + voxPosition);
                 surfaceTool.AddVertex(vertices[7] + voxPosition);
                 surfaceTool.AddVertex(vertices[3] + voxPosition);
@@ -116,7 +126,7 @@ namespace FPSGame.src.goxlap
             if (canCreateFace(x, y, z + 1, ref c))
             {
                 surfaceTool.AddNormal(new Vector3(0.0f, 0.0f, 1.0f));
-
+                surfaceTool.AddColor(new Color(1f, 1f, 1f, 1f));
                 surfaceTool.AddVertex(vertices[3] + voxPosition);
                 surfaceTool.AddVertex(vertices[6] + voxPosition);
                 surfaceTool.AddVertex(vertices[2] + voxPosition);
@@ -128,6 +138,7 @@ namespace FPSGame.src.goxlap
             if (canCreateFace(x, y, z - 1, ref c))
             {
                 surfaceTool.AddNormal(new Vector3(0.0f, 0.0f, -1.0f));
+                surfaceTool.AddColor(new Color(1f, 1f, 1f, 1f));
                 surfaceTool.AddVertex(vertices[0] + voxPosition);
                 surfaceTool.AddVertex(vertices[1] + voxPosition);
                 surfaceTool.AddVertex(vertices[5] + voxPosition);

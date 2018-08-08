@@ -91,6 +91,7 @@
     <Compile Include="src\goxlap\fastnoise.cs" />
     <Content Include=".vscode\launch.json" />
     <Content Include=".gitignore" />
+    <Compile Include="src\Common\TaskManager.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

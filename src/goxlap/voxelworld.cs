@@ -13,25 +13,24 @@ namespace FPSGame.src.Common.goxlap{
         private int CHUNK_SIZE;
 
         private float voxelSize = 1.0f;
-        private VoxelTypes[][][] worldData;
         private ChunkStruct[,,] chunks;
-        private Queue chunkQueue;
-
         private float chunkDelay = 0;
         ChunkManager chunkManager;
 
         IVoxelDataPopulate voxelDataPopulate;
-        public VoxelVolume(IVoxelDataPopulate dataPopulate, int height =64,int length =64 , int width = 64,int chunkSize = 16,float voxelSize = 1.0f)
+        public VoxelVolume(IVoxelDataPopulate dataPopulate,ref GodotTaskScheduler taskMan, int height =64,int length =64 , int width = 64,int chunkSize = 16,float voxelSize = 1.0f)
         {
             worldHeight = height;
             worldLength = length;
             worldWidth = width;
             this.voxelSize = voxelSize;
-            worldData = new VoxelTypes[worldHeight][][];
             CHUNK_SIZE = chunkSize;
-            chunkQueue = new Queue();
+
+            var manager = taskMan;
+            
+
             chunkManager = new ChunkManager(worldWidth,worldHeight,worldLength,
-            CHUNK_SIZE,this.voxelSize,out chunks);
+            CHUNK_SIZE,this.voxelSize,out chunks, ref manager);
 
             this.voxelDataPopulate = dataPopulate;
             this.voxelDataPopulate.CHUNK_SIZE = CHUNK_SIZE;
@@ -105,8 +104,8 @@ namespace FPSGame.src.Common.goxlap{
         private Random random = new Random();
         public bool InitializeVoxelData(ChunkStruct[,,] chunkList)
         {
-            noise = new FastNoise(random.Next(1337));
-            noise.SetNoiseType(FastNoise.NoiseType.Simplex);
+            noise = new FastNoise(1337);
+            noise.SetNoiseType(FastNoise.NoiseType.Cubic);
             Console.WriteLine("Curr Thread ID: " + System.Threading.Thread.CurrentThread.ManagedThreadId + " Total MEM Usage: " + GC.GetTotalMemory(true));
             for (int i = 0; i < CHUNK_X_COUNT; i++)
             {
@@ -132,11 +131,14 @@ namespace FPSGame.src.Common.goxlap{
                 for (int z = 0; z < CHUNK_SIZE; z++)
                 {
                     //Console.WriteLine(string.Format("DX: {0}, DZ: {1}",chunk.Dx+x,chunk.Dz+z));
-                    int height = (int)Mathf.Lerp(1, CHUNK_SIZE*CHUNK_Y_COUNT, noise.GetSimplex(chunk.Dx*CHUNK_SIZE+x,chunk.Dz*CHUNK_SIZE+z));
+                    int height = (int)Mathf.Lerp(1, CHUNK_SIZE*CHUNK_Y_COUNT, noise.GetNoise(chunk.Dx*CHUNK_SIZE+x,chunk.Dz*CHUNK_SIZE+z));
+                    if(height <=1){
+                        height = 1;
+                    }
                     // int height = (int)Mathf.Lerp(1, CHUNK_SIZE*CHUNK_Y_COUNT, 0.25f);
                     for (int y = 0; y < CHUNK_SIZE; y++)
                     {
-                        if((chunk.Dy*CHUNK_SIZE+y)<=height)
+                        if((chunk.Dy*CHUNK_SIZE+y)<height)
                         chunk[x, y, z] = 1;
                     }
                 }
