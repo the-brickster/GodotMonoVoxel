@@ -6,6 +6,7 @@ using Snappy;
 using System.Collections;
 using System.Collections.Concurrent;
 using FPSGame.src.goxlap;
+using System.Diagnostics;
 
 namespace FPSGame.src.Common.goxlap
 {
@@ -26,12 +27,11 @@ namespace FPSGame.src.Common.goxlap
 
         public ConcurrentQueue<MeshInstance> chunkQueue { get; } = new ConcurrentQueue<MeshInstance>();
         public static Random rand = new Random();
-        public BlockMesher mesher;
+        public AbstractVoxelMesher mesher;
 
-        private GodotTaskScheduler taskMan;
 
         public ChunkManager(int world_x_size, int world_y_size, int world_z_size,
-        int chunk_size, float vox_size, out ChunkStruct[,,] chunkArr, ref GodotTaskScheduler manager)
+        int chunk_size, float vox_size, out ChunkStruct[,,] chunkArr)
         {
             this.World_X_Size = world_x_size;
             this.World_Y_Size = world_y_size;
@@ -56,52 +56,7 @@ namespace FPSGame.src.Common.goxlap
                                                 new Vector3(VOX_SIZE,VOX_SIZE,VOX_SIZE),
                                                 new Vector3(0,VOX_SIZE,VOX_SIZE)};
             mesher = new BlockMesher(CHUNK_X_COUNT, CHUNK_Y_COUNT, CHUNK_Z_COUNT, CHUNK_SIZE, VOX_SIZE);
-            this.taskMan = manager;
-        }
-
-        public async Task Initialize()
-        {
-
-            var isReady = false;
-            Console.WriteLine("Curr Thread ID: " + System.Threading.Thread.CurrentThread.ManagedThreadId);
-            isReady = await Task.Run(() => AsyncVoxelDataInitialize());
-            if (isReady)
-            {
-                isReady = false;
-                Console.WriteLine("Checking done");
-                
-                isReady = await Task.Factory.StartNew(CreateMeshs,TaskCreationOptions.LongRunning);
-                Console.WriteLine("Checking done...2");
-            }
-        }
-        public bool AsyncVoxelDataInitialize()
-        {
-            System.Threading.Thread.CurrentThread.IsBackground = true;
-            int chunkDataCounter = 0;
-            Console.WriteLine("Curr Thread ID: " + System.Threading.Thread.CurrentThread.ManagedThreadId + " Total MEM Usage: " + GC.GetTotalMemory(true));
-
-            for (int i = 0; i < CHUNK_X_COUNT; i++)
-            {
-                for (int j = 0; j < CHUNK_Y_COUNT; j++)
-                {
-                    for (int k = 0; k < CHUNK_Z_COUNT; k++)
-                    {
-                        chunksList[i, j, k] = new ChunkStruct(CHUNK_SIZE, VOX_SIZE, i, j, k);
-                        chunksList[i, j, k].initializedVoxelData();
-                        chunksList[i, j, k].compChunkData = SnappyCodec.Compress(chunksList[i, j, k].chunkData);
-                        chunksList[i, j, k].chunkData = new byte[1];
-                        chunkDataCounter += System.Runtime.InteropServices.Marshal.SizeOf(chunksList[i, j, k]);
-                    }
-                }
-            }
-            Console.WriteLine("Curr Thread ID: " + System.Threading.Thread.CurrentThread.ManagedThreadId + " Total MEM Usage: " + GC.GetTotalMemory(true));
-            // Console.WriteLine("Completed, size of one chunk object: "+System.Runtime.InteropServices.Marshal.SizeOf(chunksList[1,1,1])+
-            // " "+CHUNK_X_COUNT+" "+CHUNK_Y_COUNT+" "+CHUNK_Z_COUNT+"\n Total Chunk obj size: "+chunkDataCounter);
-            //chunksList[0, 0, 0].chunkData = SnappyCodec.Uncompress(chunksList[0, 0, 0].compChunkData);
-            // Console.WriteLine("Compressed size: "+chunksList[0,0,0].compChunkData.Length);
-            // Console.WriteLine("UnCompressed size: "+chunksList[0,0,0].chunkData.Length);
-            Console.WriteLine(DateTime.Now.ToString("yyyyMMdd HH:mm:ss:ffff"));
-            return true;
+            
         }
 
         public void update(float delta)
@@ -111,19 +66,30 @@ namespace FPSGame.src.Common.goxlap
 
         public bool CreateMeshs()
         {
-            System.Threading.Thread.CurrentThread.IsBackground = true;
-            for (int i = 0; i < CHUNK_X_COUNT; i++)
-            {
+            var pOpts = new ParallelOptions();
+            
+            pOpts.MaxDegreeOfParallelism = 7;
+            // System.Threading.Thread.CurrentThread.IsBackground = true;
+            Parallel.For(0,CHUNK_X_COUNT,pOpts,i=>{
                 for (int j = 0; j < CHUNK_Y_COUNT; j++)
                 {
                     for (int k = 0; k < CHUNK_Z_COUNT; k++)
                     {
                         //createChunkMesh(ref this.chunksList[i,j,k]);
-                        MeshInstance mesh = this.mesher.createChunkMesh(ref this.chunksList[i, j, k]);
+                        // this.chunksList[i,j,k].uncompressVoxData();
+                        Stopwatch sw = Stopwatch.StartNew();
+                        MeshInstance mesh = this.mesher.CreateChunkMesh(ref this.chunksList[i, j, k]);
+                        Console.WriteLine("Mesh created in {0}ms ",sw.ElapsedMilliseconds);
+                        // this.chunksList[i,j,k].compressVoxData();
                         this.chunkQueue.Enqueue(mesh);
+                        
                     }
                 }
-            }
+            });
+            // for (int i = 0; i < CHUNK_X_COUNT; i++)
+            // {
+                
+            // }
             return true;
         }
 
@@ -260,8 +226,8 @@ namespace FPSGame.src.Common.goxlap
     }
     struct ChunkStruct
     {
-        public volatile bool currentlyWorked;
-        public byte[] chunkData;
+        public long currentlyWorked;
+        public volatile byte[] chunkData;
         public byte[] compChunkData;
         public int CHUNK_SIZE;
         public float VOX_SIZE;
@@ -270,6 +236,7 @@ namespace FPSGame.src.Common.goxlap
         public int Dz;
         public SurfaceTool surfaceTool;
         public Random random;
+
 
         public ChunkStruct(int chunkSize, float voxSize, int Dx, int Dy, int Dz)
         {
@@ -282,7 +249,7 @@ namespace FPSGame.src.Common.goxlap
             surfaceTool = new SurfaceTool();
             compChunkData = new byte[1];
             random = new Random();
-            currentlyWorked = false;
+            currentlyWorked = 0;
         }
 
         public void initializedVoxelData()
@@ -305,6 +272,45 @@ namespace FPSGame.src.Common.goxlap
                         // }
                     }
                 }
+            }
+        }
+
+        public bool uncompressVoxData(){
+            //0 -> chunk isn't in use
+            //1 -> chunk is in use
+            if(0 == Interlocked.Exchange(ref this.currentlyWorked,1)){
+                Console.WriteLine("Chunk compressing at thread {0}",System.Threading.Thread.CurrentThread.ManagedThreadId);
+                if(this.chunkData.Length  ==1){
+                    this.chunkData = SnappyCodec.Uncompress(this.compChunkData);
+                }
+                
+                Interlocked.Exchange(ref this.currentlyWorked,0);
+                return true;
+            }
+            else{
+                while(Interlocked.Read(ref this.currentlyWorked) == 1){
+                    Console.WriteLine("Waiting on other thread to complete their operation: {0}",System.Threading.Thread.CurrentThread.ManagedThreadId);
+                }
+                Console.WriteLine("Chunk already uncompressed");
+                return false;
+            }
+        }
+
+        public bool compressVoxData(){
+            //0 -> chunk isn't in use
+            //1 -> chunk is in use
+            if(0 == Interlocked.Exchange(ref this.currentlyWorked,1)){
+                if(this.chunkData.Length != 1){
+                    this.compChunkData = SnappyCodec.Compress(this.chunkData);
+                    this.chunkData = new byte[1];
+                }
+                
+                Interlocked.Exchange(ref this.currentlyWorked,0);
+                return true;
+            }
+            else{
+                Console.WriteLine("Chunk already compressed");
+                return false;
             }
         }
 

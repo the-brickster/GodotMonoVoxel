@@ -68,11 +68,6 @@
     <Compile Include="src\goxlap\blockMesher.cs" />
     <Compile Include="Test.cs" />
     <Content Include="src\Common\ObjectPool\pool.gd" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="src\entities\" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="packages.config" />
     <None Include="src\FPSController.gd" />
     <None Include="src\Pawn.gd" />
@@ -92,6 +87,7 @@
     <Content Include=".vscode\launch.json" />
     <Content Include=".gitignore" />
     <Compile Include="src\Common\TaskManager.cs" />
+    <Compile Include="src\goxlap\AbstractVoxelMesher.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

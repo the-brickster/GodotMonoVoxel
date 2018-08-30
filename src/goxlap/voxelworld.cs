@@ -2,8 +2,11 @@ using System;
 using System.Collections;
 using System.Runtime.InteropServices;
 using Godot;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Concurrent;
 using Snappy;
+
 
 namespace FPSGame.src.Common.goxlap{
     class VoxelVolume : Node{
@@ -18,19 +21,16 @@ namespace FPSGame.src.Common.goxlap{
         ChunkManager chunkManager;
 
         IVoxelDataPopulate voxelDataPopulate;
-        public VoxelVolume(IVoxelDataPopulate dataPopulate,ref GodotTaskScheduler taskMan, int height =64,int length =64 , int width = 64,int chunkSize = 16,float voxelSize = 1.0f)
+        public VoxelVolume(IVoxelDataPopulate dataPopulate, int height =64,int length =64 , int width = 64,int chunkSize = 16,float voxelSize = 1.0f)
         {
             worldHeight = height;
             worldLength = length;
             worldWidth = width;
             this.voxelSize = voxelSize;
             CHUNK_SIZE = chunkSize;
-
-            var manager = taskMan;
             
-
             chunkManager = new ChunkManager(worldWidth,worldHeight,worldLength,
-            CHUNK_SIZE,this.voxelSize,out chunks, ref manager);
+            CHUNK_SIZE,this.voxelSize,out chunks);
 
             this.voxelDataPopulate = dataPopulate;
             this.voxelDataPopulate.CHUNK_SIZE = CHUNK_SIZE;
@@ -56,10 +56,15 @@ namespace FPSGame.src.Common.goxlap{
                 }
                 ChunkStruct c = this.chunks[x / CHUNK_SIZE, y / CHUNK_SIZE, z / CHUNK_SIZE];
                 if(c.chunkData.Length ==1){
-                    c.currentlyWorked = true;
-                    c.chunkData = SnappyCodec.Uncompress(c.compChunkData);
+                    // if(!c.uncompressVoxData()){
+                    //     return 0;
+                    // }
+                    c.uncompressVoxData();
+                    // c.currentlyWorked = true;
+                    // c.chunkData = SnappyCodec.Uncompress(c.compChunkData);
                     // c.chunkData = new byte[1];
-                    return c[x % CHUNK_SIZE, y % CHUNK_SIZE, z % CHUNK_SIZE];
+                    // return c[x % CHUNK_SIZE, y % CHUNK_SIZE, z % CHUNK_SIZE];
+                    // return 0;
                 }
                 return c[x % CHUNK_SIZE, y % CHUNK_SIZE, z % CHUNK_SIZE];
             }
@@ -88,7 +93,8 @@ namespace FPSGame.src.Common.goxlap{
             bool result = await Task.Run(()=>voxelDataPopulate.InitializeVoxelData(chunks));
             if (result) {
                 Console.WriteLine("Task completed");
-                result = await Task.Run(()=> chunkManager.CreateMeshs());
+                result = await Task.Factory.StartNew(chunkManager.CreateMeshs,TaskCreationOptions.LongRunning);
+                
             }
 
         }
@@ -115,8 +121,9 @@ namespace FPSGame.src.Common.goxlap{
                     {
                         chunkList[i, j, k] = new ChunkStruct(CHUNK_SIZE, VOX_SIZE, i, j, k);
                         setChunkValues(chunkList[i, j, k]);
-                        chunkList[i, j, k].compChunkData = Snappy.SnappyCodec.Compress(chunkList[i, j, k].chunkData);
-                        chunkList[i, j, k].chunkData = new byte[1];
+                        // chunkList[i, j, k].compressVoxData();
+                        // chunkList[i, j, k].compChunkData = Snappy.SnappyCodec.Compress(chunkList[i, j, k].chunkData);
+                        // chunkList[i, j, k].chunkData = new byte[1];
                     }
                 }
             }

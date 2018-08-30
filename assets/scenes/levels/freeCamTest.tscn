@@ -32,7 +32,7 @@ visible = false
 
 [node name="FreeCam" parent="." index="1" instance=ExtResource( 3 )]
 
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.93955, 0.0531044 )
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 9.5295, 0.0531044 )
 far = 1000.0
 _sections_unfolded = [ "Transform" ]
 
