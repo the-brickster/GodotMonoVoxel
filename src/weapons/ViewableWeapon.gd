@@ -11,7 +11,7 @@ var mouseMove = Vector2()
 
 
 func _ready():
-	initialPosition = Vector3(get_transform().origin)
+	initialPosition = get_transform().origin
 	set_process_input(true)
 	set_physics_process(true)
 func _input(event):

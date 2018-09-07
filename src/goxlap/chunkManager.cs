@@ -27,7 +27,7 @@ namespace FPSGame.src.Common.goxlap
 
         public ConcurrentQueue<MeshInstance> chunkQueue { get; } = new ConcurrentQueue<MeshInstance>();
         public static Random rand = new Random();
-        public AbstractVoxelMesher mesher;
+        public BlockMesher mesher;
 
 
         public ChunkManager(int world_x_size, int world_y_size, int world_z_size,
@@ -69,6 +69,7 @@ namespace FPSGame.src.Common.goxlap
             var pOpts = new ParallelOptions();
             
             pOpts.MaxDegreeOfParallelism = 7;
+            
             // System.Threading.Thread.CurrentThread.IsBackground = true;
             Parallel.For(0,CHUNK_X_COUNT,pOpts,i=>{
                 for (int j = 0; j < CHUNK_Y_COUNT; j++)
@@ -77,9 +78,9 @@ namespace FPSGame.src.Common.goxlap
                     {
                         //createChunkMesh(ref this.chunksList[i,j,k]);
                         // this.chunksList[i,j,k].uncompressVoxData();
-                        Stopwatch sw = Stopwatch.StartNew();
+                        // Stopwatch sw = Stopwatch.StartNew();
                         MeshInstance mesh = this.mesher.CreateChunkMesh(ref this.chunksList[i, j, k]);
-                        Console.WriteLine("Mesh created in {0}ms ",sw.ElapsedMilliseconds);
+                        // Console.WriteLine("Mesh created in {0}ms ");
                         // this.chunksList[i,j,k].compressVoxData();
                         this.chunkQueue.Enqueue(mesh);
                         

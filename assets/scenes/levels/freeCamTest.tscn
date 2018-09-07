@@ -7,6 +7,7 @@
 [sub_resource type="SphereMesh" id=1]
 
 custom_aabb = AABB( 0, 0, 0, 0, 0, 0 )
+flip_faces = false
 radius = 1.0
 height = 2.0
 radial_segments = 64
@@ -16,28 +17,25 @@ is_hemisphere = false
 [sub_resource type="PrismMesh" id=2]
 
 custom_aabb = AABB( 0, 0, 0, 0, 0, 0 )
+flip_faces = false
 left_to_right = 0.5
 size = Vector3( 2, 2, 2 )
 subdivide_width = 0
 subdivide_height = 0
 subdivide_depth = 0
 
-[node name="Spatial" type="Spatial" index="0"]
-
+[node name="Spatial" type="Spatial"]
 script = ExtResource( 1 )
 
-[node name="testmap" parent="." index="0" instance=ExtResource( 2 )]
-
+[node name="testmap" parent="." instance=ExtResource( 2 )]
 visible = false
 
-[node name="FreeCam" parent="." index="1" instance=ExtResource( 3 )]
-
+[node name="FreeCam" parent="." instance=ExtResource( 3 )]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 9.5295, 0.0531044 )
 far = 1000.0
 _sections_unfolded = [ "Transform" ]
 
-[node name="MeshInstance" type="MeshInstance" parent="." index="2"]
-
+[node name="MeshInstance" type="MeshInstance" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 4.30051, 0, 0 )
 layers = 1
 material_override = null
@@ -53,8 +51,7 @@ skeleton = NodePath("..")
 material/0 = null
 _sections_unfolded = [ "Geometry", "Transform" ]
 
-[node name="MeshInstance2" type="MeshInstance" parent="." index="3"]
-
+[node name="MeshInstance2" type="MeshInstance" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 3.91196 )
 layers = 1
 material_override = null
@@ -69,5 +66,4 @@ mesh = SubResource( 2 )
 skeleton = NodePath("..")
 material/0 = null
 _sections_unfolded = [ "Transform" ]
-
 

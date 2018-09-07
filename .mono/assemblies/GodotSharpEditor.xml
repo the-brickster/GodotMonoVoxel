@@ -150,6 +150,10 @@
             Get the type of the file, given the full path.
             </summary>
         </member>
+        <member name="M:Godot.EditorFileSystem.UpdateScriptClasses">
+            <summary>
+            </summary>
+        </member>
         <member name="T:Godot.EditorFileSystemDirectory">
             <summary>
             A more generalized, low-level variation of the directory concept.
@@ -183,6 +187,14 @@
         <member name="M:Godot.EditorFileSystemDirectory.GetFileType(System.Int32)">
             <summary>
             Returns the file extension of the file at index [code]idx[/code].
+            </summary>
+        </member>
+        <member name="M:Godot.EditorFileSystemDirectory.GetFileScriptClassName(System.Int32)">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:Godot.EditorFileSystemDirectory.GetFileScriptClassExtends(System.Int32)">
+            <summary>
             </summary>
         </member>
         <member name="M:Godot.EditorFileSystemDirectory.GetFileImportIsValid(System.Int32)">
@@ -239,13 +251,13 @@
             return "Default"
             func get_import_options(i):
             return [{"name": "my_option", "default_value": false}]
-            func load(src, dst, opts, r_platform_variants, r_gen_files):
+            func import(source_file, save_path, options, r_platform_variants, r_gen_files):
             var file = File.new()
-            if file.open(src, File.READ) != OK:
+            if file.open(source_file, File.READ) != OK:
             return FAILED
             var mesh = Mesh.new()
-            var save = dst + "." + get_save_extension()
-            ResourceSaver.save(file, mesh)
+            var filename = save_path + "." + get_save_extension()
+            ResourceSaver.save(filename, mesh)
             return OK
             [/codeblock]
             </summary>
@@ -265,7 +277,7 @@
             Get the unique name of the importer.
             </summary>
         </member>
-        <member name="M:Godot.EditorImportPlugin.GetOptionVisibility(System.String,Godot.Dictionary)">
+        <member name="M:Godot.EditorImportPlugin.GetOptionVisibility(System.String,Godot.Collections.Dictionary)">
             <summary>
             </summary>
         </member>
@@ -291,7 +303,7 @@
         </member>
         <member name="M:Godot.EditorImportPlugin.GetResourceType">
             <summary>
-            Get the godot resource type associated with this loader. e.g. "Mesh" or "Animation".
+            Get the Godot resource type associated with this loader. e.g. "Mesh" or "Animation".
             </summary>
         </member>
         <member name="M:Godot.EditorImportPlugin.GetSaveExtension">
@@ -304,13 +316,49 @@
             Get the name to display in the import window.
             </summary>
         </member>
-        <member name="M:Godot.EditorImportPlugin.Import(System.String,System.String,Godot.Dictionary,Godot.Array,Godot.Array)">
+        <member name="M:Godot.EditorImportPlugin.Import(System.String,System.String,Godot.Collections.Dictionary,Godot.Collections.Array,Godot.Collections.Array)">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:Godot.EditorInspector.Refresh">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:Godot.EditorInspectorPlugin.CanHandle(Godot.Object)">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:Godot.EditorInspectorPlugin.ParseBegin(Godot.Object)">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:Godot.EditorInspectorPlugin.ParseCategory(Godot.Object,System.String)">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:Godot.EditorInspectorPlugin.ParseEnd">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:Godot.EditorInspectorPlugin.ParseProperty(Godot.Object,System.Int32,System.String,System.Int32,System.String,System.Int32)">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:Godot.EditorInspectorPlugin.AddCustomControl(Godot.Control)">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:Godot.EditorInspectorPlugin.AddPropertyEditor(System.String,Godot.Control)">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:Godot.EditorInspectorPlugin.AddPropertyEditorForMultipleProperties(System.String,System.String[],Godot.Control)">
             <summary>
             </summary>
         </member>
         <member name="T:Godot.EditorInterface">
             <summary>
-            Editor interface. Allows saving and (re-)loading scenes, rendering mesh previews, inspecting and editing resources and objects and provides access to [EditorSettings], [EditorFileSystem], [EditorResourcePreview]\ er, [ScriptEditor], the editor viewport, as well as information about scenes. Also see [EditorPlugin] and [EditorScript].
+            Editor interface. Allows saving and (re-)loading scenes, rendering mesh previews, inspecting and editing resources and objects and provides access to [EditorSettings], [EditorFileSystem], [EditorResourcePreview], [ScriptEditor], the editor viewport, as well as information about scenes. Also see [EditorPlugin] and [EditorScript].
             </summary>
         </member>
         <member name="M:Godot.EditorInterface.InspectObject(Godot.Object,System.String)">
@@ -378,7 +426,7 @@
             Returns the editor [Viewport].
             </summary>
         </member>
-        <member name="M:Godot.EditorInterface.MakeMeshPreviews(Godot.Array,System.Int32)">
+        <member name="M:Godot.EditorInterface.MakeMeshPreviews(Godot.Collections.Array,System.Int32)">
             <summary>
             Returns mesh previews rendered at the given size as an [Array] of [Texture]s.
             </summary>
@@ -422,14 +470,13 @@
             This is used, for example, in shader editors to let the plugin know that it must apply the shader code being written by the user to the object.
             </summary>
         </member>
+        <member name="M:Godot.EditorPlugin.Build">
+            <summary>
+            </summary>
+        </member>
         <member name="M:Godot.EditorPlugin.Clear">
             <summary>
             Clear all the state and reset the object being edited to zero. This ensures your plugin does not keep editing a currently existing node, or a node from the wrong scene.
-            </summary>
-        </member>
-        <member name="M:Godot.EditorPlugin.CreateSpatialGizmo(Godot.Spatial)">
-            <summary>
-            This is used for plugins that create gizmos used by the spatial editor. Just check that the node passed in the "for_spatial" argument matches your plugin.
             </summary>
         </member>
         <member name="M:Godot.EditorPlugin.Edit(Godot.Object)">
@@ -499,7 +546,7 @@
             This method is called after the editor saves the project or when it's closed. It asks the plugin to save edited external scenes/resources.
             </summary>
         </member>
-        <member name="M:Godot.EditorPlugin.SetState(Godot.Dictionary)">
+        <member name="M:Godot.EditorPlugin.SetState(Godot.Collections.Dictionary)">
             <summary>
             Restore the state saved by [method EditorPlugin.get_state].
             </summary>
@@ -543,8 +590,18 @@
             Remove the control from the specified container. Use it when cleaning up after adding a control with [method add_control_to_container]. Note that you can simply free the control if you won't use it anymore.
             </summary>
         </member>
+        <member name="M:Godot.EditorPlugin.AddToolMenuItem(System.String,Godot.Object,System.String,System.Object)">
+            <summary>
+            Adds a custom menu to 'Project &gt; Tools' as [code]name[/code] that calls [code]callback[/code] on an instance of [code]handler[/code] with a parameter [code]ud[/code] when user activates it.
+            </summary>
+        </member>
         <member name="M:Godot.EditorPlugin.AddToolSubmenuItem(System.String,Godot.Object)">
             <summary>
+            </summary>
+        </member>
+        <member name="M:Godot.EditorPlugin.RemoveToolMenuItem(System.String)">
+            <summary>
+            Removes a menu [code]name[/code] from 'Project &gt; Tools'.
             </summary>
         </member>
         <member name="M:Godot.EditorPlugin.AddCustomType(System.String,System.String,Godot.Script,Godot.Texture)">
@@ -558,6 +615,16 @@
         <member name="M:Godot.EditorPlugin.RemoveCustomType(System.String)">
             <summary>
             Remove a custom type added by [method EditorPlugin.add_custom_type]
+            </summary>
+        </member>
+        <member name="M:Godot.EditorPlugin.AddAutoloadSingleton(System.String,System.String)">
+            <summary>
+            Add a script at [code]path[/code] to the Autoload list as [code]name[/code].
+            </summary>
+        </member>
+        <member name="M:Godot.EditorPlugin.RemoveAutoloadSingleton(System.String)">
+            <summary>
+            Remove an Autoload [code]name[/code] from the list.
             </summary>
         </member>
         <member name="M:Godot.EditorPlugin.UpdateOverlays">
@@ -606,6 +673,14 @@
             <summary>
             </summary>
         </member>
+        <member name="M:Godot.EditorPlugin.AddInspectorPlugin(Godot.EditorInspectorPlugin)">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:Godot.EditorPlugin.RemoveInspectorPlugin(Godot.EditorInspectorPlugin)">
+            <summary>
+            </summary>
+        </member>
         <member name="M:Godot.EditorPlugin.SetInputEventForwardingAlwaysEnabled">
             <summary>
             Use this method if you always want to receive inputs from 3D view screen inside [method forward_spatial_gui_input]. It might be especially usable if your plugin will want to use raycast in the scene.
@@ -616,6 +691,51 @@
             </summary>
         </member>
         <member name="M:Godot.EditorPlugin.GetEditorInterface">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:Godot.EditorPlugin.GetScriptCreateDialog">
+            <summary>
+            Gets the Editor's dialogue used for making scripts. Note that users can configure it before use.
+            </summary>
+        </member>
+        <member name="P:Godot.EditorProperty.Label">
+            <summary>
+            </summary>
+        </member>
+        <member name="P:Godot.EditorProperty.ReadOnly">
+            <summary>
+            </summary>
+        </member>
+        <member name="P:Godot.EditorProperty.Checkable">
+            <summary>
+            </summary>
+        </member>
+        <member name="P:Godot.EditorProperty.Checked">
+            <summary>
+            </summary>
+        </member>
+        <member name="P:Godot.EditorProperty.DrawRed">
+            <summary>
+            </summary>
+        </member>
+        <member name="P:Godot.EditorProperty.Keying">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:Godot.EditorProperty.UpdateProperty">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:Godot.EditorProperty.GetEditedProperty">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:Godot.EditorProperty.GetEditedObject">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:Godot.EditorProperty.GetTooltipText">
             <summary>
             </summary>
         </member>
@@ -705,8 +825,24 @@
             <summary>
             </summary>
         </member>
+        <member name="T:Godot.EditorScenePostImport">
+            <summary>
+            The imported scene can be automatically modified right after import by specifying a 'custom script' that inherits from this class. The [method post_import]-method receives the imported scene's root-node and returns the modified version of the scene
+            </summary>
+        </member>
         <member name="M:Godot.EditorScenePostImport.PostImport(Godot.Object)">
             <summary>
+            Gets called after the scene got imported and has to return the modified version of the scene
+            </summary>
+        </member>
+        <member name="M:Godot.EditorScenePostImport.GetSourceFolder">
+            <summary>
+            Returns the resource-folder the imported scene-file is located in
+            </summary>
+        </member>
+        <member name="M:Godot.EditorScenePostImport.GetSourceFile">
+            <summary>
+            Returns the source-file-path which got imported (e.g. [code]res://scene.dae[/code] )
             </summary>
         </member>
         <member name="T:Godot.EditorScript">
@@ -813,7 +949,7 @@
             <summary>
             </summary>
         </member>
-        <member name="M:Godot.EditorSettings.AddPropertyInfo(Godot.Dictionary)">
+        <member name="M:Godot.EditorSettings.AddPropertyInfo(Godot.Collections.Dictionary)">
             <summary>
             Add a custom property info to a property. The dictionary must contain: name:[String](the name of the property) and type:[int](see TYPE_* in [@GlobalScope]), and optionally hint:[int](see PROPERTY_HINT_* in [@GlobalScope]), hint_string:[String].
             Example:
@@ -839,6 +975,14 @@
         <member name="M:Godot.EditorSettings.GetProjectSettingsDir">
             <summary>
             Get the specific project settings path. Projects all have a unique sub-directory inside the settings path where project specific settings are saved.
+            </summary>
+        </member>
+        <member name="M:Godot.EditorSettings.SetProjectMetadata(System.String,System.String,System.Object)">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:Godot.EditorSettings.GetProjectMetadata(System.String,System.String,System.Object)">
+            <summary>
             </summary>
         </member>
         <member name="M:Godot.EditorSettings.SetFavoriteDirs(System.String[])">
@@ -908,7 +1052,7 @@
             <summary>
             </summary>
         </member>
-        <member name="M:Godot.EditorSpatialGizmo.AddCollisionTriangles(Godot.TriangleMesh,Godot.AABB)">
+        <member name="M:Godot.EditorSpatialGizmo.AddCollisionTriangles(Godot.TriangleMesh)">
             <summary>
             Add collision triangles to the gizmo for picking. A [TriangleMesh] can be generated from a regular [Mesh] too. Call this function during [method redraw].
             </summary>
@@ -918,7 +1062,7 @@
             Add an unscaled billboard for visualization. Call this function during [method redraw].
             </summary>
         </member>
-        <member name="M:Godot.EditorSpatialGizmo.AddHandles(Godot.Vector3[],System.Boolean,System.Boolean)">
+        <member name="M:Godot.EditorSpatialGizmo.AddHandles(Godot.Vector3[],Godot.Material,System.Boolean,System.Boolean)">
             <summary>
             Add a list of handles (points) which can be used to deform the object being edited.
             There are virtual functions which will be called upon editing of these handles. Call this function during [method redraw].
@@ -930,6 +1074,26 @@
         </member>
         <member name="M:Godot.EditorSpatialGizmo.Clear">
             <summary>
+            </summary>
+        </member>
+        <member name="M:Godot.EditorSpatialGizmo.SetHidden(System.Boolean)">
+            <summary>
+            </summary>
+        </member>
+        <member name="T:Godot.ScriptCreateDialog">
+            <summary>
+            The ScriptCreateDialog creates script files according to a given template for a given scripting language. The standard use is to configure its fields prior to calling a [method popup]() method.
+            [codeblock]
+            func _ready():
+            dialog.config("Node", "res://new_node.gd") # for in-engine types
+            dialog.config("\"res://base_node.gd\"", "res://derived_node.gd") # for script types
+            dialog.popup_centered()
+            [/codeblock]
+            </summary>
+        </member>
+        <member name="M:Godot.ScriptCreateDialog.Config(System.String,System.String)">
+            <summary>
+            Prefills required fields to configure the ScriptCreateDialog for use.
             </summary>
         </member>
         <member name="M:Godot.ScriptEditor.GetDragDataFw(Godot.Vector2,Godot.Control)">

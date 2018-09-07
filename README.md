@@ -33,6 +33,7 @@ VoxelVolume basicVoxel = new VoxelVolume(new NoisePopulator(),128,1024,1024,64,0
 - Some way to batch the voxel chunks using `MeshInstance`
 - Camera location based chunk loading
 - Greedy meshing for block mesher
+    - Preliminary implementation done, need to speed up mesh generation 
 - Other voxel mesher algorithm (marching cubes, dual contouring)
 - Voxel chunk collision based on the type of mesher used
     - i.e. block mesher would use box colliders 
