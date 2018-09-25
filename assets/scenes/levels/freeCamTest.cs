@@ -13,14 +13,21 @@ public class freeCamTest : Spatial
 
     public override async void _Ready()
     {
-
         var manager = this.GetNode("/root/GlobalGameSystemsManager") as GlobalGameSystemsManager;
-        GodotTaskScheduler gdTask = manager.TaskScheduler;
+        var Freecam = this.GetChild(1) as Camera;
+        var top = Freecam.Near * Mathf.Tan(Mathf.Deg2Rad(Freecam.Fov)/2);
+        var height = OS.GetWindowSize().y;
+        var mat = new ShaderMaterial();
+                mat.SetShader(ResourceLoader.Load(@"res://assets/shaders/point_shader_test.shader") as Shader);
+                mat.SetShaderParam("albedo",new Color(0.5f,0f,0f,1));
+                mat.SetShaderParam("point_size",18.0f);
+                mat.SetShaderParam("near",Freecam.Near);
+                mat.SetShaderParam("far",Freecam.Far);
+                mat.SetShaderParam("bottom",-top);
+                mat.SetShaderParam("height",height);
         
-        
-        Console.WriteLine("GD Task Scheduler concurrency level {0}, num processors {1}, task scheduler {2}",
-        gdTask.MaximumConcurrencyLevel,System.Environment.ProcessorCount, gdTask);
-        VoxelVolume basicVoxel = new VoxelVolume(new NoisePopulator(),64,512,512,64,0.0625f);
+        Console.WriteLine("CAM FOV: {0}, TOP: {1}, {2}, {3}, {4}",Freecam.Fov,top,Freecam.Near, Freecam.Far,height);
+        VoxelVolume basicVoxel = new VoxelVolume(new NoisePopulator(),128,256,256,128,0.0625f,mat);
         // VoxelTypes s = basicVoxel[1,2,3];
         // Vector3 a = new Vector3(1,0,1);
         // Console.WriteLine("Vector before {0}",a);

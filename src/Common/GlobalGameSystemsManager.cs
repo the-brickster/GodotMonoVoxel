@@ -21,6 +21,7 @@ namespace FPSGame.src.Common
 
         private TracerManager tracerManager;
         public GodotTaskScheduler TaskScheduler {get; private set;}
+        private QueueTaskSchedWrapper wrapper;
         public async override void _PhysicsProcess(float delta)
         {
             base._PhysicsProcess(delta);
@@ -29,14 +30,19 @@ namespace FPSGame.src.Common
         public async override void _Process(float delta)
         {
             base._Process(delta);
-            TaskScheduler.Activate();
+            // TaskScheduler.Activate();
         }
 
         public override void _Ready()
         {
             base._Ready();
-            this.TaskScheduler = new GodotTaskScheduler();
-            
+            // this.TaskScheduler = new GodotTaskScheduler();
+            this.wrapper = QueueTaskSchedWrapper.Instance;
+            this.wrapper.CreatePriorityQueue(0);
+            this.wrapper.CreatePriorityQueue(1);
+            this.wrapper.CreatePriorityQueue(2);
+
+
             gameObjPool = new GameObjPool();
             this.AddChild(gameObjPool);
             tracerManager = new TracerManager();

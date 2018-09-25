@@ -88,6 +88,8 @@
     <Content Include=".gitignore" />
     <Compile Include="src\Common\TaskManager.cs" />
     <Compile Include="src\goxlap\AbstractVoxelMesher.cs" />
+    <Compile Include="src\Common\QueueTaskSchedWrapper.cs" />
+    <Compile Include="src\Common\QueuedTaskScheduler.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

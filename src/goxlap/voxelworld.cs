@@ -21,7 +21,7 @@ namespace FPSGame.src.Common.goxlap{
         ChunkManager chunkManager;
 
         IVoxelDataPopulate voxelDataPopulate;
-        public VoxelVolume(IVoxelDataPopulate dataPopulate, int height =64,int length =64 , int width = 64,int chunkSize = 16,float voxelSize = 1.0f)
+        public VoxelVolume(IVoxelDataPopulate dataPopulate, int height =64,int length =64 , int width = 64,int chunkSize = 16,float voxelSize = 1.0f,ShaderMaterial s = null)
         {
             worldHeight = height;
             worldLength = length;
@@ -30,7 +30,7 @@ namespace FPSGame.src.Common.goxlap{
             CHUNK_SIZE = chunkSize;
             
             chunkManager = new ChunkManager(worldWidth,worldHeight,worldLength,
-            CHUNK_SIZE,this.voxelSize,out chunks);
+            CHUNK_SIZE,this.voxelSize,out chunks,s);
 
             this.voxelDataPopulate = dataPopulate;
             this.voxelDataPopulate.CHUNK_SIZE = CHUNK_SIZE;
@@ -55,17 +55,17 @@ namespace FPSGame.src.Common.goxlap{
                     return (int)VoxelTypes.Air;
                 }
                 ChunkStruct c = this.chunks[x / CHUNK_SIZE, y / CHUNK_SIZE, z / CHUNK_SIZE];
-                if(c.chunkData.Length ==1){
-                    // if(!c.uncompressVoxData()){
-                    //     return 0;
-                    // }
-                    c.uncompressVoxData();
-                    // c.currentlyWorked = true;
-                    // c.chunkData = SnappyCodec.Uncompress(c.compChunkData);
-                    // c.chunkData = new byte[1];
-                    // return c[x % CHUNK_SIZE, y % CHUNK_SIZE, z % CHUNK_SIZE];
-                    // return 0;
-                }
+                // if(c.chunkData.Length ==1){
+                //     // if(!c.uncompressVoxData()){
+                //     //     return 0;
+                //     // }
+                //     c.uncompressVoxData();
+                //     // c.currentlyWorked = true;
+                //     // c.chunkData = SnappyCodec.Uncompress(c.compChunkData);
+                //     // c.chunkData = new byte[1];
+                //     // return c[x % CHUNK_SIZE, y % CHUNK_SIZE, z % CHUNK_SIZE];
+                //     // return 0;
+                // }
                 return c[x % CHUNK_SIZE, y % CHUNK_SIZE, z % CHUNK_SIZE];
             }
             set {
@@ -93,7 +93,7 @@ namespace FPSGame.src.Common.goxlap{
             bool result = await Task.Run(()=>voxelDataPopulate.InitializeVoxelData(chunks));
             if (result) {
                 Console.WriteLine("Task completed");
-                result = await Task.Factory.StartNew(chunkManager.CreateMeshs,TaskCreationOptions.LongRunning);
+                Task.Factory.StartNew(chunkManager.CreateMeshs,cancellationToken:CancellationToken.None,creationOptions:TaskCreationOptions.LongRunning,scheduler:QueueTaskSchedWrapper.Instance.queuedTaskScheduler);
                 
             }
 

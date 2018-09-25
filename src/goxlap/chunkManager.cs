@@ -27,11 +27,11 @@ namespace FPSGame.src.Common.goxlap
 
         public ConcurrentQueue<MeshInstance> chunkQueue { get; } = new ConcurrentQueue<MeshInstance>();
         public static Random rand = new Random();
-        public BlockMesher mesher;
+        public PointVoxelMesher mesher;
 
 
         public ChunkManager(int world_x_size, int world_y_size, int world_z_size,
-        int chunk_size, float vox_size, out ChunkStruct[,,] chunkArr)
+        int chunk_size, float vox_size, out ChunkStruct[,,] chunkArr,ShaderMaterial s = null)
         {
             this.World_X_Size = world_x_size;
             this.World_Y_Size = world_y_size;
@@ -55,7 +55,7 @@ namespace FPSGame.src.Common.goxlap
                                                 new Vector3(VOX_SIZE,VOX_SIZE,0),
                                                 new Vector3(VOX_SIZE,VOX_SIZE,VOX_SIZE),
                                                 new Vector3(0,VOX_SIZE,VOX_SIZE)};
-            mesher = new BlockMesher(CHUNK_X_COUNT, CHUNK_Y_COUNT, CHUNK_Z_COUNT, CHUNK_SIZE, VOX_SIZE);
+            mesher = new PointVoxelMesher(CHUNK_X_COUNT, CHUNK_Y_COUNT, CHUNK_Z_COUNT, CHUNK_SIZE, VOX_SIZE,s);
             
         }
 
@@ -66,12 +66,31 @@ namespace FPSGame.src.Common.goxlap
 
         public bool CreateMeshs()
         {
-            var pOpts = new ParallelOptions();
+            // var pOpts = new ParallelOptions();
             
-            pOpts.MaxDegreeOfParallelism = 7;
+            // pOpts.MaxDegreeOfParallelism = 7;
             
-            // System.Threading.Thread.CurrentThread.IsBackground = true;
-            Parallel.For(0,CHUNK_X_COUNT,pOpts,i=>{
+            // // System.Threading.Thread.CurrentThread.IsBackground = true;
+            // Parallel.For(0,CHUNK_X_COUNT,pOpts,i=>{
+            //     for (int j = 0; j < CHUNK_Y_COUNT; j++)
+            //     {
+            //         for (int k = 0; k < CHUNK_Z_COUNT; k++)
+            //         {
+            //             //createChunkMesh(ref this.chunksList[i,j,k]);
+            //             // this.chunksList[i,j,k].uncompressVoxData();
+            //             // Stopwatch sw = Stopwatch.StartNew();
+            //             MeshInstance mesh = this.mesher.CreateChunkMesh(ref this.chunksList[i, j, k]);
+            //             // Console.WriteLine("Mesh created in {0}ms ");
+            //             // this.chunksList[i,j,k].compressVoxData();
+            //             this.chunkQueue.Enqueue(mesh);
+                        
+            //         }
+            //     }
+            // });
+            CancellationTokenSource source = new CancellationTokenSource();
+            CancellationToken cts = source.Token;
+            for (int i = 0; i < CHUNK_X_COUNT; i++)
+            {
                 for (int j = 0; j < CHUNK_Y_COUNT; j++)
                 {
                     for (int k = 0; k < CHUNK_Z_COUNT; k++)
@@ -79,151 +98,163 @@ namespace FPSGame.src.Common.goxlap
                         //createChunkMesh(ref this.chunksList[i,j,k]);
                         // this.chunksList[i,j,k].uncompressVoxData();
                         // Stopwatch sw = Stopwatch.StartNew();
-                        MeshInstance mesh = this.mesher.CreateChunkMesh(ref this.chunksList[i, j, k]);
-                        // Console.WriteLine("Mesh created in {0}ms ");
-                        // this.chunksList[i,j,k].compressVoxData();
-                        this.chunkQueue.Enqueue(mesh);
-                        
+                        Tuple<int, int, int> t = new Tuple<int, int, int>(i, j, k);
+                        Task.Factory.StartNew(action: ActionCreateChunkMesh(t), state: t,cancellationToken:cts,
+                        creationOptions:TaskCreationOptions.None,scheduler:QueueTaskSchedWrapper.Instance.GetPriorityQueueScheduler(0));
+
+
                     }
                 }
-            });
-            // for (int i = 0; i < CHUNK_X_COUNT; i++)
-            // {
-                
-            // }
+            }
             return true;
         }
 
-/*
- [Obsolete]
-        private void CreateChunkMesh(ref ChunkStruct c)
+        private Action<object> ActionCreateChunkMesh(Tuple<int,int,int> value)
         {
-            c.chunkData = SnappyCodec.Uncompress(c.compChunkData);
-            c.surfaceTool.Begin(Mesh.PrimitiveType.Triangles);
-            for (int i = 0; i < CHUNK_SIZE; i++)
+            return t =>
             {
-                for (int j = 0; j < CHUNK_SIZE; j++)
+                if (t == null)
                 {
-                    for (int k = 0; k < CHUNK_SIZE; k++)
+                    throw new ArgumentNullException(nameof(t));
+                }
+                
+                // Tuple<int, int, int> value = t1;
+                // Console.WriteLine("{0},{1},{2}", value.Item1, value.Item2, value.Item3);
+                MeshInstance mesh = this.mesher.CreateChunkMesh(ref this.chunksList[value.Item1, value.Item2, value.Item3]);
+                this.chunkQueue.Enqueue(mesh);
+            };
+        }
+
+        /*
+         [Obsolete]
+                private void CreateChunkMesh(ref ChunkStruct c)
+                {
+                    c.chunkData = SnappyCodec.Uncompress(c.compChunkData);
+                    c.surfaceTool.Begin(Mesh.PrimitiveType.Triangles);
+                    for (int i = 0; i < CHUNK_SIZE; i++)
                     {
-                        if (c[i, j, k] == 0)
+                        for (int j = 0; j < CHUNK_SIZE; j++)
                         {
-                            continue;
+                            for (int k = 0; k < CHUNK_SIZE; k++)
+                            {
+                                if (c[i, j, k] == 0)
+                                {
+                                    continue;
+                                }
+                                createFaces(i, j, k, c.Dx, c.Dy, c.Dz, ref c.surfaceTool, ref c);
+                            }
                         }
-                        createFaces(i, j, k, c.Dx, c.Dy, c.Dz, ref c.surfaceTool, ref c);
+                    }
+                    c.surfaceTool.Index();
+                    MeshInstance mesh = new MeshInstance();
+                    mesh.SetMesh(c.surfaceTool.Commit());
+                    this.chunkQueue.Enqueue(mesh);
+                    c.surfaceTool.Clear();
+                    c.chunkData = new byte[1];
+                }
+                [Obsolete]
+                private void createFaces(int x, int y, int z, int Dx, int Dy, int Dz,
+                ref SurfaceTool surfaceTool, ref ChunkStruct c)
+                {
+                    Vector3 voxPosition = new Vector3((x) * VOX_SIZE, (y) * VOX_SIZE, (z) * VOX_SIZE);
+                    voxPosition.x = voxPosition.x + (Dx * CHUNK_SIZE * VOX_SIZE);
+                    voxPosition.y = voxPosition.y + (Dy * CHUNK_SIZE * VOX_SIZE);
+                    voxPosition.z = voxPosition.z + (Dz * CHUNK_SIZE * VOX_SIZE);
+                    if (canCreateFace(x, y - 1, z, ref c))
+                    {
+
+                        surfaceTool.AddNormal(new Vector3(0.0f, -1.0f, 0.0f));
+                        surfaceTool.AddVertex(vertices[1] + voxPosition);
+                        surfaceTool.AddVertex(vertices[3] + voxPosition);
+                        surfaceTool.AddVertex(vertices[2] + voxPosition);
+
+                        surfaceTool.AddVertex(vertices[1] + voxPosition);
+                        surfaceTool.AddVertex(vertices[0] + voxPosition);
+                        surfaceTool.AddVertex(vertices[3] + voxPosition);
+                    }
+                    if (canCreateFace(x, y + 1, z, ref c))
+                    {
+                        surfaceTool.AddNormal(new Vector3(0.0f, 1.0f, 0.0f));
+                        surfaceTool.AddVertex(vertices[4] + voxPosition);
+                        surfaceTool.AddVertex(vertices[5] + voxPosition);
+                        surfaceTool.AddVertex(vertices[7] + voxPosition);
+
+                        surfaceTool.AddVertex(vertices[5] + voxPosition);
+                        surfaceTool.AddVertex(vertices[6] + voxPosition);
+                        surfaceTool.AddVertex(vertices[7] + voxPosition);
+                    }
+                    if (canCreateFace(x + 1, y, z, ref c))
+                    {
+                        surfaceTool.AddNormal(new Vector3(1.0f, 0.0f, 0.0f));
+                        surfaceTool.AddVertex(vertices[2] + voxPosition);
+                        surfaceTool.AddVertex(vertices[5] + voxPosition);
+                        surfaceTool.AddVertex(vertices[1] + voxPosition);
+
+                        surfaceTool.AddVertex(vertices[2] + voxPosition);
+                        surfaceTool.AddVertex(vertices[6] + voxPosition);
+                        surfaceTool.AddVertex(vertices[5] + voxPosition);
+                    }
+                    if (canCreateFace(x - 1, y, z, ref c))
+                    {
+                        surfaceTool.AddNormal(new Vector3(-1.0f, 0.0f, 0.0f));
+                        surfaceTool.AddVertex(vertices[0] + voxPosition);
+                        surfaceTool.AddVertex(vertices[7] + voxPosition);
+                        surfaceTool.AddVertex(vertices[3] + voxPosition);
+
+                        surfaceTool.AddVertex(vertices[0] + voxPosition);
+                        surfaceTool.AddVertex(vertices[4] + voxPosition);
+                        surfaceTool.AddVertex(vertices[7] + voxPosition);
+                    }
+                    if (canCreateFace(x, y, z + 1, ref c))
+                    {
+                        surfaceTool.AddNormal(new Vector3(0.0f, 0.0f, 1.0f));
+
+                        surfaceTool.AddVertex(vertices[3] + voxPosition);
+                        surfaceTool.AddVertex(vertices[6] + voxPosition);
+                        surfaceTool.AddVertex(vertices[2] + voxPosition);
+
+                        surfaceTool.AddVertex(vertices[3] + voxPosition);
+                        surfaceTool.AddVertex(vertices[7] + voxPosition);
+                        surfaceTool.AddVertex(vertices[6] + voxPosition);
+                    }
+                    if (canCreateFace(x, y, z - 1, ref c))
+                    {
+                        surfaceTool.AddNormal(new Vector3(0.0f, 0.0f, -1.0f));
+                        surfaceTool.AddVertex(vertices[0] + voxPosition);
+                        surfaceTool.AddVertex(vertices[1] + voxPosition);
+                        surfaceTool.AddVertex(vertices[5] + voxPosition);
+
+                        surfaceTool.AddVertex(vertices[5] + voxPosition);
+                        surfaceTool.AddVertex(vertices[4] + voxPosition);
+                        surfaceTool.AddVertex(vertices[0] + voxPosition);
                     }
                 }
-            }
-            c.surfaceTool.Index();
-            MeshInstance mesh = new MeshInstance();
-            mesh.SetMesh(c.surfaceTool.Commit());
-            this.chunkQueue.Enqueue(mesh);
-            c.surfaceTool.Clear();
-            c.chunkData = new byte[1];
-        }
-        [Obsolete]
-        private void createFaces(int x, int y, int z, int Dx, int Dy, int Dz,
-        ref SurfaceTool surfaceTool, ref ChunkStruct c)
-        {
-            Vector3 voxPosition = new Vector3((x) * VOX_SIZE, (y) * VOX_SIZE, (z) * VOX_SIZE);
-            voxPosition.x = voxPosition.x + (Dx * CHUNK_SIZE * VOX_SIZE);
-            voxPosition.y = voxPosition.y + (Dy * CHUNK_SIZE * VOX_SIZE);
-            voxPosition.z = voxPosition.z + (Dz * CHUNK_SIZE * VOX_SIZE);
-            if (canCreateFace(x, y - 1, z, ref c))
-            {
 
-                surfaceTool.AddNormal(new Vector3(0.0f, -1.0f, 0.0f));
-                surfaceTool.AddVertex(vertices[1] + voxPosition);
-                surfaceTool.AddVertex(vertices[3] + voxPosition);
-                surfaceTool.AddVertex(vertices[2] + voxPosition);
+                private bool canCreateFace(int x, int y, int z, ref ChunkStruct c)
+                {
+                    if (!isInData(x, y, z))
+                    {
+                        return true;
+                    }
+                    else if (c[x, y, z] == (byte)VoxelTypes.Air)
+                    {
+                        return true;
+                    }
+                    return false;
+                }
+                private bool isInData(int x, int y, int z)
+                {
+                    if (x < 0 || y < 0 || z < 0 || x >= CHUNK_SIZE || y >= CHUNK_SIZE || z >= CHUNK_SIZE)
+                    {
+                        return false;
+                    }
+                    return true;
+                }
+                // private bool isInData(int x, int y, int z, int Dx, int Dy, int Dz){
 
-                surfaceTool.AddVertex(vertices[1] + voxPosition);
-                surfaceTool.AddVertex(vertices[0] + voxPosition);
-                surfaceTool.AddVertex(vertices[3] + voxPosition);
-            }
-            if (canCreateFace(x, y + 1, z, ref c))
-            {
-                surfaceTool.AddNormal(new Vector3(0.0f, 1.0f, 0.0f));
-                surfaceTool.AddVertex(vertices[4] + voxPosition);
-                surfaceTool.AddVertex(vertices[5] + voxPosition);
-                surfaceTool.AddVertex(vertices[7] + voxPosition);
+                // }
+         */
 
-                surfaceTool.AddVertex(vertices[5] + voxPosition);
-                surfaceTool.AddVertex(vertices[6] + voxPosition);
-                surfaceTool.AddVertex(vertices[7] + voxPosition);
-            }
-            if (canCreateFace(x + 1, y, z, ref c))
-            {
-                surfaceTool.AddNormal(new Vector3(1.0f, 0.0f, 0.0f));
-                surfaceTool.AddVertex(vertices[2] + voxPosition);
-                surfaceTool.AddVertex(vertices[5] + voxPosition);
-                surfaceTool.AddVertex(vertices[1] + voxPosition);
-
-                surfaceTool.AddVertex(vertices[2] + voxPosition);
-                surfaceTool.AddVertex(vertices[6] + voxPosition);
-                surfaceTool.AddVertex(vertices[5] + voxPosition);
-            }
-            if (canCreateFace(x - 1, y, z, ref c))
-            {
-                surfaceTool.AddNormal(new Vector3(-1.0f, 0.0f, 0.0f));
-                surfaceTool.AddVertex(vertices[0] + voxPosition);
-                surfaceTool.AddVertex(vertices[7] + voxPosition);
-                surfaceTool.AddVertex(vertices[3] + voxPosition);
-
-                surfaceTool.AddVertex(vertices[0] + voxPosition);
-                surfaceTool.AddVertex(vertices[4] + voxPosition);
-                surfaceTool.AddVertex(vertices[7] + voxPosition);
-            }
-            if (canCreateFace(x, y, z + 1, ref c))
-            {
-                surfaceTool.AddNormal(new Vector3(0.0f, 0.0f, 1.0f));
-
-                surfaceTool.AddVertex(vertices[3] + voxPosition);
-                surfaceTool.AddVertex(vertices[6] + voxPosition);
-                surfaceTool.AddVertex(vertices[2] + voxPosition);
-
-                surfaceTool.AddVertex(vertices[3] + voxPosition);
-                surfaceTool.AddVertex(vertices[7] + voxPosition);
-                surfaceTool.AddVertex(vertices[6] + voxPosition);
-            }
-            if (canCreateFace(x, y, z - 1, ref c))
-            {
-                surfaceTool.AddNormal(new Vector3(0.0f, 0.0f, -1.0f));
-                surfaceTool.AddVertex(vertices[0] + voxPosition);
-                surfaceTool.AddVertex(vertices[1] + voxPosition);
-                surfaceTool.AddVertex(vertices[5] + voxPosition);
-
-                surfaceTool.AddVertex(vertices[5] + voxPosition);
-                surfaceTool.AddVertex(vertices[4] + voxPosition);
-                surfaceTool.AddVertex(vertices[0] + voxPosition);
-            }
-        }
-
-        private bool canCreateFace(int x, int y, int z, ref ChunkStruct c)
-        {
-            if (!isInData(x, y, z))
-            {
-                return true;
-            }
-            else if (c[x, y, z] == (byte)VoxelTypes.Air)
-            {
-                return true;
-            }
-            return false;
-        }
-        private bool isInData(int x, int y, int z)
-        {
-            if (x < 0 || y < 0 || z < 0 || x >= CHUNK_SIZE || y >= CHUNK_SIZE || z >= CHUNK_SIZE)
-            {
-                return false;
-            }
-            return true;
-        }
-        // private bool isInData(int x, int y, int z, int Dx, int Dy, int Dz){
-
-        // }
- */
-       
     }
     struct ChunkStruct
     {
@@ -253,28 +284,6 @@ namespace FPSGame.src.Common.goxlap
             currentlyWorked = 0;
         }
 
-        public void initializedVoxelData()
-        {
-
-            for (int i = 0; i < CHUNK_SIZE; i++)
-            {
-
-                for (int j = 0; j < CHUNK_SIZE; j++)
-                {
-
-                    for (int k = 0; k < CHUNK_SIZE; k++)
-                    {
-                        // if(j <= 10){
-                        this[i, j, k] = (byte)random.Next(2);
-
-                        // }
-                        // else{
-                        //     chunkData[i][j][k] = int.Air;
-                        // }
-                    }
-                }
-            }
-        }
 
         public bool uncompressVoxData(){
             //0 -> chunk isn't in use
