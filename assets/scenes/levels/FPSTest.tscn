@@ -7,9 +7,6 @@
 
 [node name="FPSController" parent="." instance=ExtResource( 1 )]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.38928, 0 )
-move_lock_x = false
-move_lock_y = false
-move_lock_z = false
 can_double_jump = false
 
 [node name="testmap" parent="." instance=ExtResource( 2 )]

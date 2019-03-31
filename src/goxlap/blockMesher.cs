@@ -23,17 +23,19 @@ namespace FPSGame.src.goxlap
 
         public PointVoxelMesher(int CHUNK_X_COUNT, int CHUNK_Y_COUNT, int CHUNK_Z_COUNT, int CHUNK_SIZE, float VOX_SIZE, ShaderMaterial s = null) : base(CHUNK_X_COUNT, CHUNK_Y_COUNT, CHUNK_Z_COUNT, CHUNK_SIZE, VOX_SIZE)
         {
-            if(s == null){
+            if (s == null)
+            {
                 mat = new ShaderMaterial();
                 mat.SetShader(ResourceLoader.Load(@"res://assets/shaders/point_shader_test.shader") as Shader);
-                mat.SetShaderParam("albedo",new Color(1f,1f,1f,1));
-                mat.SetShaderParam("point_size",1f);
+                mat.SetShaderParam("albedo", new Color(1f, 1f, 1f, 1));
+                mat.SetShaderParam("point_size", 1f);
             }
-            else{
+            else
+            {
                 mat = s;
             }
-            
-            
+
+
             // mat.SetCullMode(CullMode.Disabled);
 
 
@@ -55,22 +57,23 @@ namespace FPSGame.src.goxlap
 
         public override MeshInstance CreateChunkMesh(ref ChunkStruct c)
         {
+
             // Console.WriteLine("Curr Chunk {0},{1},{2}",c.Dx,c.Dy,c.Dz);
             String startTime = DateTime.Now.ToString("HH:mm:ss:ffff");
             c.surfaceTool.Begin(Mesh.PrimitiveType.Points);
             c.surfaceTool.SetMaterial(mat);
             String initTime = DateTime.Now.ToString("HH:mm:ss:ffff");
-            for (int i = 0; i < CHUNK_SIZE; i+=1)
+            for (int i = 0; i < CHUNK_SIZE; i += 1)
             {
-                for (int j = 0; j < CHUNK_SIZE; j+=1)
+                for (int j = 0; j < CHUNK_SIZE; j += 1)
                 {
-                    for (int k = 0; k < CHUNK_SIZE; k+=1)
+                    for (int k = 0; k < CHUNK_SIZE; k += 1)
                     {
                         if (c[i, j, k] == 0)
                         {
                             continue;
                         }
-                        createVoxel(i, j, k,  ref c);
+                        createVoxel(i, j, k, ref c);
                     }
                 }
             }
@@ -86,21 +89,30 @@ namespace FPSGame.src.goxlap
             // ,initTime,pointCreationTime,indexTime);
             return mesh;
         }
-        public void createVoxel(int x, int y, int z, ref ChunkStruct chunk){
+        public void createVoxel(int x, int y, int z, ref ChunkStruct chunk)
+        {
+            Random random = new Random();
+            float r = (float)random.NextDouble();
+            float g = (float)random.NextDouble();
+            float b = (float)random.NextDouble();
             HashSet<Face> faceSet = CheckFaces(x, y, z, ref chunk);
             int size = faceSet.Count;
-            if((size == 1 && faceSet.Contains(Face.NO_SIDE)) || faceSet.Contains(Face.NONE)){
+            if ((size == 1 && faceSet.Contains(Face.NO_SIDE)) || faceSet.Contains(Face.NONE))
+            {
                 return;
             }
             Vector3 normal = Vector3.Zero;
-            foreach(Face face in faceSet){
-                normal+=face.offset;
+            foreach (Face face in faceSet)
+            {
+                normal += face.offset;
             }
-            normal/=faceSet.Count;
-            if(normal == Vector3.Zero){
-                normal.y=1;
+            normal /= faceSet.Count;
+            if (normal == Vector3.Zero)
+            {
+                normal.y = 1;
             }
             chunk.surfaceTool.AddNormal(normal);
+            chunk.surfaceTool.AddColor(new Color(r, g, b));
             Vector3 voxPosition = new Vector3((x) * VOX_SIZE, (y) * VOX_SIZE, (z) * VOX_SIZE);
             voxPosition.x = voxPosition.x + (chunk.Dx * CHUNK_SIZE * VOX_SIZE);
             voxPosition.y = voxPosition.y + (chunk.Dy * CHUNK_SIZE * VOX_SIZE);
@@ -125,7 +137,7 @@ namespace FPSGame.src.goxlap
 
             return faceSet;
         }
-         private bool canCreateFace(int x, int y, int z, ref ChunkStruct c)
+        private bool canCreateFace(int x, int y, int z, ref ChunkStruct c)
         {
 
 
@@ -167,13 +179,13 @@ namespace FPSGame.src.goxlap
         public VoxelVolume volume { get; set; }
         public SpatialMaterial mat;
 
-        
+
 
         public delegate void CreateFace(ref ChunkStruct c, int firstDimensionStart,
-				int secondDimensionStart,
-				int firstDimensionEnd,
-				int secondDimensionEnd,
-				int thirdDimension);
+                int secondDimensionStart,
+                int firstDimensionEnd,
+                int secondDimensionEnd,
+                int thirdDimension);
         public GreedyBlockMesher(int CHUNK_X_COUNT, int CHUNK_Y_COUNT, int CHUNK_Z_COUNT, int CHUNK_SIZE, float VOX_SIZE) : base(CHUNK_X_COUNT, CHUNK_Y_COUNT, CHUNK_Z_COUNT, CHUNK_SIZE, VOX_SIZE)
         {
             mat = new SpatialMaterial();
@@ -198,7 +210,7 @@ namespace FPSGame.src.goxlap
                                                 new Vector3(VOX_SIZE,VOX_SIZE,VOX_SIZE),
                                                 new Vector3(0,VOX_SIZE,VOX_SIZE)};
 
-            
+
         }
         private void initializeJaggedArr(ref byte[][] maskArr)
         {
@@ -239,9 +251,9 @@ namespace FPSGame.src.goxlap
 
 
         public override MeshInstance CreateChunkMesh(ref ChunkStruct c)
-        {   
+        {
             String startTime = DateTime.Now.ToString("HH:mm:ss:ffff");
-            
+
             byte[][] firstMask;
             byte[][] secondMask;
             MeshInstance mesh = new MeshInstance();
@@ -252,24 +264,24 @@ namespace FPSGame.src.goxlap
             initializeJaggedArr(ref firstMask);
             initializeJaggedArr(ref secondMask);
             String initTime = DateTime.Now.ToString("HH:mm:ss:ffff");
-            
+
             for (int x = 0; x < CHUNK_SIZE; x++)
             {
-                this.FillMasksWithLeftRight(ref c, x,ref firstMask,ref secondMask);
+                this.FillMasksWithLeftRight(ref c, x, ref firstMask, ref secondMask);
 
                 this.FillWithQuads(firstMask, x, ref c, CreateLeftQuad);
                 this.FillWithQuads(secondMask, x + 1, ref c, CreateRightQuad);
             }
             for (int y = 0; y < CHUNK_SIZE; y++)
             {
-                this.FillMasksWithBottomTop(ref c, y,ref firstMask,ref secondMask);
+                this.FillMasksWithBottomTop(ref c, y, ref firstMask, ref secondMask);
 
                 this.FillWithQuads(firstMask, y, ref c, CreateBottomQuad);
                 this.FillWithQuads(secondMask, y + 1, ref c, CreateTopQuad);
             }
             for (int z = 0; z < CHUNK_SIZE; z++)
             {
-                this.FillMasksWithBackFront(ref c, z,ref firstMask,ref secondMask);
+                this.FillMasksWithBackFront(ref c, z, ref firstMask, ref secondMask);
 
                 this.FillWithQuads(firstMask, z, ref c, CreateBackQuad);
                 this.FillWithQuads(secondMask, z + 1, ref c, CreateFrontQuad);
@@ -279,8 +291,8 @@ namespace FPSGame.src.goxlap
             mesh.SetMesh(c.surfaceTool.Commit());
             c.surfaceTool.Clear();
             String indexTime = DateTime.Now.ToString("HH:mm:ss:ffff");
-            Console.WriteLine("Curr Thread: {0}, StartTime: {1}, Initialization Time: {2}, Greedy Time: {3}, Index Time {4}",System.Threading.Thread.CurrentThread.ManagedThreadId,startTime
-            ,initTime,greedyMeshingTime,indexTime);
+            Console.WriteLine("Curr Thread: {0}, StartTime: {1}, Initialization Time: {2}, Greedy Time: {3}, Index Time {4}", System.Threading.Thread.CurrentThread.ManagedThreadId, startTime
+            , initTime, greedyMeshingTime, indexTime);
             return mesh;
         }
 
@@ -293,7 +305,7 @@ namespace FPSGame.src.goxlap
             voxPosition1.y = voxPosition1.y + (c.Dy * CHUNK_SIZE * VOX_SIZE);
             voxPosition1.z = voxPosition1.z + (c.Dz * CHUNK_SIZE * VOX_SIZE);
 
-            Vector3 voxPosition2 = new Vector3((x2) * VOX_SIZE, (y2) * VOX_SIZE, (z+1) * VOX_SIZE);
+            Vector3 voxPosition2 = new Vector3((x2) * VOX_SIZE, (y2) * VOX_SIZE, (z + 1) * VOX_SIZE);
             voxPosition2.x = voxPosition2.x + (c.Dx * CHUNK_SIZE * VOX_SIZE);
             voxPosition2.y = voxPosition2.y + (c.Dy * CHUNK_SIZE * VOX_SIZE);
             voxPosition2.z = voxPosition2.z + (c.Dz * CHUNK_SIZE * VOX_SIZE);
@@ -308,10 +320,10 @@ namespace FPSGame.src.goxlap
             surfaceTool.AddVertex(new Vector3(voxPosition1.x, voxPosition2.y, voxPosition2.z));
             surfaceTool.AddVertex(new Vector3(voxPosition2.x, voxPosition2.y, voxPosition2.z));
             // addQuad(ref c,
-			// 	new Vector3(x2, y, z),
-			// 	new Vector3(x, y, z),
-			// 	new Vector3(x,y2,z),
-			// 	new Vector3(x2,y2,z));
+            // 	new Vector3(x2, y, z),
+            // 	new Vector3(x, y, z),
+            // 	new Vector3(x,y2,z),
+            // 	new Vector3(x2,y2,z));
         }
         private void CreateBottomQuad(ref ChunkStruct c, int x, int z, int x2, int z2, int y)
         {
@@ -335,15 +347,15 @@ namespace FPSGame.src.goxlap
             surfaceTool.AddVertex(new Vector3(voxPosition1.x, voxPosition1.y, voxPosition1.z));
             surfaceTool.AddVertex(new Vector3(voxPosition1.x, voxPosition1.y, voxPosition2.z));
             // addQuad(ref c,
-			// 	new Vector3(x2,y,z2),
-			// 	new Vector3(x,y,z2),
-			// 	new Vector3(x, y, z),
-			// 	new Vector3(x2, y, z));
+            // 	new Vector3(x2,y,z2),
+            // 	new Vector3(x,y,z2),
+            // 	new Vector3(x, y, z),
+            // 	new Vector3(x2, y, z));
         }
         private void CreateFrontQuad(ref ChunkStruct c, int x, int y, int x2, int y2, int z)
         {
             //The Z-1 is more of a hack because the face previously was shown on the back side rather than the front
-            Vector3 voxPosition1 = new Vector3((x) * VOX_SIZE, (y) * VOX_SIZE, (z-1) * VOX_SIZE);
+            Vector3 voxPosition1 = new Vector3((x) * VOX_SIZE, (y) * VOX_SIZE, (z - 1) * VOX_SIZE);
             voxPosition1.x = voxPosition1.x + (c.Dx * CHUNK_SIZE * VOX_SIZE);
             voxPosition1.y = voxPosition1.y + (c.Dy * CHUNK_SIZE * VOX_SIZE);
             voxPosition1.z = voxPosition1.z + (c.Dz * CHUNK_SIZE * VOX_SIZE);
@@ -363,10 +375,10 @@ namespace FPSGame.src.goxlap
             surfaceTool.AddVertex(new Vector3(voxPosition1.x, voxPosition2.y, voxPosition1.z));
             surfaceTool.AddVertex(new Vector3(voxPosition1.x, voxPosition1.y, voxPosition1.z));
             // addQuad(ref c,
-			// 	new Vector3(x,y,z),
-			// 	new Vector3(x2,y,z),
-			// 	new Vector3(x2,y2,z),
-			// 	new Vector3(x,y2,z));
+            // 	new Vector3(x,y,z),
+            // 	new Vector3(x2,y,z),
+            // 	new Vector3(x2,y2,z),
+            // 	new Vector3(x,y2,z));
         }
         private void CreateLeftQuad(ref ChunkStruct c, int z, int y, int z2, int y2, int x)
         {
@@ -390,10 +402,10 @@ namespace FPSGame.src.goxlap
             surfaceTool.AddVertex(new Vector3(voxPosition1.x, voxPosition2.y, voxPosition1.z));
             surfaceTool.AddVertex(new Vector3(voxPosition1.x, voxPosition2.y, voxPosition2.z));
             // addQuad(ref c,
-			// 	new Vector3(x, y, z),
-			// 	new Vector3(x, y, z2),
-			// 	new Vector3(x,y2,z2),
-			// 	new Vector3(x,y2,z));
+            // 	new Vector3(x, y, z),
+            // 	new Vector3(x, y, z2),
+            // 	new Vector3(x,y2,z2),
+            // 	new Vector3(x,y2,z));
         }
         private void CreateRightQuad(ref ChunkStruct c, int z, int y, int z2, int y2, int x)
         {
@@ -417,10 +429,10 @@ namespace FPSGame.src.goxlap
             surfaceTool.AddVertex(new Vector3(voxPosition2.x, voxPosition2.y, voxPosition2.z));
             surfaceTool.AddVertex(new Vector3(voxPosition2.x, voxPosition2.y, voxPosition1.z));
             // addQuad(ref c,
-			// 	new Vector3(x, y, z2),
-			// 	new Vector3(x, y, z),
-			// 	new Vector3(x, y2, z),
-			// 	new Vector3(x, y2, z2));
+            // 	new Vector3(x, y, z2),
+            // 	new Vector3(x, y, z),
+            // 	new Vector3(x, y2, z),
+            // 	new Vector3(x, y2, z2));
         }
         private void CreateTopQuad(ref ChunkStruct c, int x, int z, int x2, int z2, int y)
         {
@@ -444,11 +456,11 @@ namespace FPSGame.src.goxlap
             surfaceTool.AddVertex(new Vector3(voxPosition2.x, voxPosition2.y, voxPosition2.z));
             surfaceTool.AddVertex(new Vector3(voxPosition1.x, voxPosition2.y, voxPosition2.z));
             // this.addQuad(ref c,
-			// 	new Vector3(x, y, z2),
-			// 	new Vector3(x2, y, z2),
-			// 	new Vector3(x2, y, z),
-			// 	new Vector3(x, y, z));
-            
+            // 	new Vector3(x, y, z2),
+            // 	new Vector3(x2, y, z2),
+            // 	new Vector3(x2, y, z),
+            // 	new Vector3(x, y, z));
+
         }
 
         private HashSet<Face> CheckFaces(int x, int y, int z, ref ChunkStruct c)
@@ -501,27 +513,30 @@ namespace FPSGame.src.goxlap
 
         private void FillWithQuads(byte[][] mask, int currentSlice, ref ChunkStruct c, CreateFace createFace)
         {
-            for(int x=0; x< mask.Length;x++){
+            for (int x = 0; x < mask.Length; x++)
+            {
                 byte[] row = mask[x];
-                for(int y=0;y<row.Length;y++){
-                    if(row[y] != (byte) VoxelTypes.Air){
+                for (int y = 0; y < row.Length; y++)
+                {
+                    if (row[y] != (byte)VoxelTypes.Air)
+                    {
                         byte currentId = row[y];
 
                         int startX = x;
                         int startY = y;
 
-                        int endY = findYEnd(row,currentId,startY);
+                        int endY = findYEnd(row, currentId, startY);
                         int endX = findXEnd(mask, currentId, startY, endY, x);
 
-                        y = endY -1;
+                        y = endY - 1;
                         //public delegate void CreateFace(ref ChunkStruct c, int x, int y, int z, int x2, int y2, int z2);
-                        createFace(ref c,startX,startY,endX,endY,currentSlice);
+                        createFace(ref c, startX, startY, endX, endY, currentSlice);
                     }
                 }
             }
         }
 
-        private void FillMasksWithBackFront(ref ChunkStruct c, int currentSlice,ref byte[][] firstMask,ref byte[][] secondMask)
+        private void FillMasksWithBackFront(ref ChunkStruct c, int currentSlice, ref byte[][] firstMask, ref byte[][] secondMask)
         {
             for (int x = 0; x < CHUNK_SIZE; x++)
             {
@@ -550,7 +565,7 @@ namespace FPSGame.src.goxlap
             }
         }
 
-        private void FillMasksWithBottomTop(ref ChunkStruct c, int currentSlice,ref byte[][]firstMask,ref byte[][]secondMask)
+        private void FillMasksWithBottomTop(ref ChunkStruct c, int currentSlice, ref byte[][] firstMask, ref byte[][] secondMask)
         {
             for (int x = 0; x < CHUNK_SIZE; x++)
             {
@@ -579,7 +594,7 @@ namespace FPSGame.src.goxlap
             }
         }
 
-        private void FillMasksWithLeftRight(ref ChunkStruct c, int currentSlice,ref byte[][]firstMask,ref byte[][]secondMask)
+        private void FillMasksWithLeftRight(ref ChunkStruct c, int currentSlice, ref byte[][] firstMask, ref byte[][] secondMask)
         {
             for (int y = 0; y < CHUNK_SIZE; y++)
             {

@@ -1,73 +1,90 @@
 shader_type spatial;
-render_mode blend_mix,depth_draw_opaque,cull_back,vertex_lighting;
+render_mode skip_vertex_transform;
 
 uniform vec4 albedo : hint_color;
-uniform float point_size : hint_range(0,128);//Splat radii
-uniform float near;
-uniform float far;
-uniform float bottom; //bottom parameter of the viewing frustum
-uniform float height; //Height of the viewport
+uniform float voxelSize;
+uniform vec2 screen_size;
+uniform vec2 viewport_pos;
+uniform vec3 camera_pos;
 
-//BOKEH UNIFORMS
-// The Golden Angle is (3.-sqrt(5.0))*PI radians, which doesn't precompiled for some reason.
-uniform float GOLDEN_ANGLE = 2.39996;
-uniform int ITERATIONS = 150;
-varying mat2 rot;
-//mat2(cos(GOLDEN_ANGLE), sin(GOLDEN_ANGLE), -sin(GOLDEN_ANGLE), cos(GOLDEN_ANGLE))
+varying vec4 col;
 
-//Normal Matrix will need to be calculated
-//Formula transpose(inverse(gl_ModelViewMatrix))
-varying mat3 normalMatrix;
-varying vec3 ex_Normals;
-varying flat float radiusPixels;
-varying flat vec2 center;
+varying mat4 ViewProjectionMatrix;
+varying vec4 pos_Box;
+varying vec3 radius_Box;
+varying vec3 invradius_Box;
+varying mat3 rotation_Box;
 
-//https://stackoverflow.com/questions/25780145/gl-pointsize-corresponding-to-world-space-size
+varying vec3 min_pos_Box;
+varying vec3 max_pos_Box;
+
 
 void vertex() {
-	vec4 gl_position = PROJECTION_MATRIX * MODELVIEW_MATRIX * vec4(VERTEX,1.0);
-	center = (0.5 * gl_position.xy/gl_position.w + 0.5) * VIEWPORT_SIZE;
-	POINT_SIZE =( VIEWPORT_SIZE.y * PROJECTION_MATRIX[1][1] * point_size/gl_position.w)*point_size;
-	radiusPixels = POINT_SIZE/2.0;
-//	normalMatrix = mat3(transpose(inverse(MODELVIEW_MATRIX)));
-//	NORMAL = normalize(normalMatrix * NORMAL);
-//	if(abs(NORMAL.z) <=0.1){
-//		NORMAL.z = 0.1;
-//	}
-//
-//	POINT_SIZE = point_size;
-	rot = mat2(vec2(cos(GOLDEN_ANGLE), sin(GOLDEN_ANGLE)), vec2(-sin(GOLDEN_ANGLE), cos(GOLDEN_ANGLE)));
-	COLOR = albedo;
-}
-
-void light(){
+	float padding = 2.0f;
+	mat4 mvp = PROJECTION_MATRIX * MODELVIEW_MATRIX;
+	vec4 gl_Position = mvp * vec4(VERTEX, 1.0);
+	ViewProjectionMatrix = mvp;
+//	quadricProj(VERTEX,voxelSize,mvp,screen_size/2.0,gl_Position,POINT_SIZE);
+	POINT_SIZE = screen_size.y * PROJECTION_MATRIX[1][1] * (voxelSize*padding)/gl_Position.w;
 	
+	
+	
+
+	
+	col = albedo;
+	pos_Box = WORLD_MATRIX * vec4(VERTEX,1.0);
+	
+	VERTEX = (MODELVIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
+    NORMAL = (MODELVIEW_MATRIX * vec4(NORMAL, 0.0)).xyz;
+	
+	
+	radius_Box = vec3(voxelSize);
+	invradius_Box = 1.0/radius_Box;
+	rotation_Box=mat3(1.0f);
+	
+	min_pos_Box = pos_Box.xyz - vec3(voxelSize);
+	max_pos_Box = pos_Box.xyz + vec3(voxelSize);
+//	PROJECTION_MATRIX = mat4(1.0);
 }
 
-vec3 Bokek ( sampler2D tex, vec2 uv, float radius){
-	vec3 acc = vec3(0), div = acc;
-	float r = 1.;
-    vec2 vangle = vec2(0.0,radius*.01 / sqrt(float(ITERATIONS)));
-    
-	for (int j = 0; j < ITERATIONS; j++)
-    {  
-        // the approx increase in the scale of sqrt(0, 1, 2, 3...)
-        r += 1. / r;
-	    vangle = rot * vangle;
-        vec3 col = texture(tex, uv + (r-1.) * vangle).xyz; /// ... Sample the image
-        col = col * col *1.8; // ... Contrast it for better highlights - leave this out elsewhere.
-		vec3 bokeh = pow(col, vec3(4));
-		acc += col * bokeh;
-		div += bokeh;
-	}
-	return acc / div;
-}
 
+
+vec2 intersectAABB(vec3 rayOrigin, vec3 rayDir, vec3 boxMin, vec3 boxMax) {
+    vec3 tMin = (boxMin - rayOrigin) / rayDir;
+    vec3 tMax = (boxMax - rayOrigin) / rayDir;
+    vec3 t1 = min(tMin, tMax);
+    vec3 t2 = max(tMin, tMax);
+    float tNear = max(max(t1.x, t1.y), t1.z);
+    float tFar = min(min(t2.x, t2.y), t2.z);
+    return vec2(tNear, tFar);
+}
 void fragment() {
-	vec2 uv = FRAGCOORD.xy/VIEWPORT_SIZE.x;
-	float blurFactor = 1.5;
-	float rad = .8 - .8*cos(blurFactor * 6.283);
+	vec2 p = 2.0 * vec2(FRAGCOORD.xy)/(screen_size.xy-viewport_pos.xy) - vec2(1.0);
+	vec3 ro = CAMERA_MATRIX[3].xyz;//ray origin
+	vec4 rdh = (CAMERA_MATRIX * INV_PROJECTION_MATRIX )* vec4(p,-1.0,1.0);
+	vec3 rd = rdh.xyz/rdh.w - ro;//ray direction
 	
+
+	vec3 color = COLOR.rgb;
 	
+	vec3 boxMin = pos_Box.xyz- radius_Box;
+    vec3 boxMax = pos_Box.xyz + radius_Box;
+
+
+	vec2 result = intersectAABB(ro,rd,boxMin,boxMax);
+    bool rayIntersectionTest = result.y > result.x;
+	if(rayIntersectionTest == false){
+		color = vec3(1.0);
+	}
+//	
+    	color = sqrt( color );
+
+	ALBEDO =color;
+		
+	
+//	ALBEDO = texture(SCREEN_TEXTURE,POINT_COORD).rgb;
+
+}
+void light(){
 	
 }

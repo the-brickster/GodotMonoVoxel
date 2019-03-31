@@ -4,7 +4,7 @@ const MOUSE_SENSITIVITY = 0.002
 
 
 # The camera movement speed (tweakable using the mouse wheel)
-var move_speed = 0.5
+var move_speed = 1.5
 
 # Stores where the camera is wanting to go (based on pressed keys and speed modifier)
 var motion = Vector3()
@@ -15,6 +15,8 @@ var velocity = Vector3()
 # The initial camera node rotation
 var initial_rotation = self.rotation.y
 
+
+
 func _input(event):
 	# Mouse look (effective only if the mouse is captured)
 	if event is InputEventMouseMotion and Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
@@ -22,6 +24,7 @@ func _input(event):
 		rotation.y -= event.relative.x*MOUSE_SENSITIVITY
 		# Vertical mouse look, clamped to -90..90 degrees
 		rotation.x = clamp(rotation.x - event.relative.y*MOUSE_SENSITIVITY, deg2rad(-90), deg2rad(90))
+
 
 	# Toggle HUD
 #	if event.is_action_pressed("toggle_hud"):
@@ -88,6 +91,7 @@ func _process(delta):
 
 	# Apply velocity
 	translation += velocity*delta
+
 
 func _exit_tree():
 	# Restore the mouse cursor upon quitting

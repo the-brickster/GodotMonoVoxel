@@ -5,18 +5,19 @@
 
 [node name="FreeCam" type="Camera"]
 keep_aspect = 1
-cull_mask = 1048575
+cull_mask = 1048573
 environment = null
 h_offset = 0.0
 v_offset = 0.0
 doppler_tracking = 0
 projection = 0
-current = false
+current = true
 fov = 70.0
 size = 1.0
 near = 0.05
 far = 100.0
 script = ExtResource( 1 )
+_sections_unfolded = [ "Matrix", "Transform", "Visibility" ]
 
 [node name="HUDBase" parent="." instance=ExtResource( 2 )]
 

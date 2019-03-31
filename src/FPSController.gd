@@ -1,7 +1,7 @@
 extends "res://src/Pawn.gd"
 
 # Inspector properties
-export(float) var camera_sensitivity = Vector2(0.15, 0.15)
+export(Vector2) var camera_sensitivity = Vector2(0.15, 0.15)
 #Signals
 signal mouse_movement(mouseMove)
 

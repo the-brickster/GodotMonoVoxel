@@ -31,7 +31,7 @@ namespace FPSGame.src.Common.goxlap
 
 
         public ChunkManager(int world_x_size, int world_y_size, int world_z_size,
-        int chunk_size, float vox_size, out ChunkStruct[,,] chunkArr,ShaderMaterial s = null)
+        int chunk_size, float vox_size, out ChunkStruct[,,] chunkArr, ShaderMaterial s = null)
         {
             this.World_X_Size = world_x_size;
             this.World_Y_Size = world_y_size;
@@ -55,8 +55,8 @@ namespace FPSGame.src.Common.goxlap
                                                 new Vector3(VOX_SIZE,VOX_SIZE,0),
                                                 new Vector3(VOX_SIZE,VOX_SIZE,VOX_SIZE),
                                                 new Vector3(0,VOX_SIZE,VOX_SIZE)};
-            mesher = new PointVoxelMesher(CHUNK_X_COUNT, CHUNK_Y_COUNT, CHUNK_Z_COUNT, CHUNK_SIZE, VOX_SIZE,s);
-            
+            mesher = new PointVoxelMesher(CHUNK_X_COUNT, CHUNK_Y_COUNT, CHUNK_Z_COUNT, CHUNK_SIZE, VOX_SIZE, s);
+
         }
 
         public void update(float delta)
@@ -67,9 +67,9 @@ namespace FPSGame.src.Common.goxlap
         public bool CreateMeshs()
         {
             // var pOpts = new ParallelOptions();
-            
+
             // pOpts.MaxDegreeOfParallelism = 7;
-            
+
             // // System.Threading.Thread.CurrentThread.IsBackground = true;
             // Parallel.For(0,CHUNK_X_COUNT,pOpts,i=>{
             //     for (int j = 0; j < CHUNK_Y_COUNT; j++)
@@ -83,7 +83,7 @@ namespace FPSGame.src.Common.goxlap
             //             // Console.WriteLine("Mesh created in {0}ms ");
             //             // this.chunksList[i,j,k].compressVoxData();
             //             this.chunkQueue.Enqueue(mesh);
-                        
+
             //         }
             //     }
             // });
@@ -99,8 +99,8 @@ namespace FPSGame.src.Common.goxlap
                         // this.chunksList[i,j,k].uncompressVoxData();
                         // Stopwatch sw = Stopwatch.StartNew();
                         Tuple<int, int, int> t = new Tuple<int, int, int>(i, j, k);
-                        Task.Factory.StartNew(action: ActionCreateChunkMesh(t), state: t,cancellationToken:cts,
-                        creationOptions:TaskCreationOptions.None,scheduler:QueueTaskSchedWrapper.Instance.GetPriorityQueueScheduler(0));
+                        Task.Factory.StartNew(action: ActionCreateChunkMesh(t), state: t, cancellationToken: cts,
+                        creationOptions: TaskCreationOptions.None, scheduler: QueueTaskSchedWrapper.Instance.GetPriorityQueueScheduler(0));
 
 
                     }
@@ -109,7 +109,7 @@ namespace FPSGame.src.Common.goxlap
             return true;
         }
 
-        private Action<object> ActionCreateChunkMesh(Tuple<int,int,int> value)
+        private Action<object> ActionCreateChunkMesh(Tuple<int, int, int> value)
         {
             return t =>
             {
@@ -117,7 +117,7 @@ namespace FPSGame.src.Common.goxlap
                 {
                     throw new ArgumentNullException(nameof(t));
                 }
-                
+
                 // Tuple<int, int, int> value = t1;
                 // Console.WriteLine("{0},{1},{2}", value.Item1, value.Item2, value.Item3);
                 MeshInstance mesh = this.mesher.CreateChunkMesh(ref this.chunksList[value.Item1, value.Item2, value.Item3]);
@@ -259,7 +259,7 @@ namespace FPSGame.src.Common.goxlap
     struct ChunkStruct
     {
         public long currentlyWorked;
-        public volatile byte[] chunkData;
+        public byte[] chunkData;
         public byte[] compChunkData;
         public int CHUNK_SIZE;
         public float VOX_SIZE;
@@ -285,40 +285,49 @@ namespace FPSGame.src.Common.goxlap
         }
 
 
-        public bool uncompressVoxData(){
+        public bool uncompressVoxData()
+        {
             //0 -> chunk isn't in use
             //1 -> chunk is in use
-            if(0 == Interlocked.Exchange(ref this.currentlyWorked,1)){
-                Console.WriteLine("Chunk compressing at thread {0}",System.Threading.Thread.CurrentThread.ManagedThreadId);
-                if(this.chunkData.Length  ==1){
+            if (0 == Interlocked.Exchange(ref this.currentlyWorked, 1))
+            {
+                Console.WriteLine("Chunk compressing at thread {0}", System.Threading.Thread.CurrentThread.ManagedThreadId);
+                if (this.chunkData.Length == 1)
+                {
                     this.chunkData = SnappyCodec.Uncompress(this.compChunkData);
                 }
-                
-                Interlocked.Exchange(ref this.currentlyWorked,0);
+
+                Interlocked.Exchange(ref this.currentlyWorked, 0);
                 return true;
             }
-            else{
-                while(Interlocked.Read(ref this.currentlyWorked) == 1){
-                    Console.WriteLine("Waiting on other thread to complete their operation: {0}",System.Threading.Thread.CurrentThread.ManagedThreadId);
+            else
+            {
+                while (Interlocked.Read(ref this.currentlyWorked) == 1)
+                {
+                    Console.WriteLine("Waiting on other thread to complete their operation: {0}", System.Threading.Thread.CurrentThread.ManagedThreadId);
                 }
                 Console.WriteLine("Chunk already uncompressed");
                 return false;
             }
         }
 
-        public bool compressVoxData(){
+        public bool compressVoxData()
+        {
             //0 -> chunk isn't in use
             //1 -> chunk is in use
-            if(0 == Interlocked.Exchange(ref this.currentlyWorked,1)){
-                if(this.chunkData.Length != 1){
+            if (0 == Interlocked.Exchange(ref this.currentlyWorked, 1))
+            {
+                if (this.chunkData.Length != 1)
+                {
                     this.compChunkData = SnappyCodec.Compress(this.chunkData);
                     this.chunkData = new byte[1];
                 }
-                
-                Interlocked.Exchange(ref this.currentlyWorked,0);
+
+                Interlocked.Exchange(ref this.currentlyWorked, 0);
                 return true;
             }
-            else{
+            else
+            {
                 Console.WriteLine("Chunk already compressed");
                 return false;
             }

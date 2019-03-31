@@ -13,18 +13,20 @@ public class HUDCanvas : ReferenceRect
 
     public async override void _Ready()
     {
+
         GD.Print("Loaded HUD");
         this.fpsTextLabel = this.GetNode("FPSCounter") as Label;
         this.fpsTextLabel.SetText(Engine.GetFramesPerSecond().ToString());
     }
-    public async override void _Process(float delta){
+    public async override void _Process(float delta)
+    {
 
         this.fpsTextLabel.SetText(Engine.GetFramesPerSecond().ToString());
     }
-//    public override void _Process(float delta)
-//    {
-//        // Called every frame. Delta is time since last frame.
-//        // Update game logic here.
-//        
-//    }
+    //    public override void _Process(float delta)
+    //    {
+    //        // Called every frame. Delta is time since last frame.
+    //        // Update game logic here.
+    //        
+    //    }
 }
