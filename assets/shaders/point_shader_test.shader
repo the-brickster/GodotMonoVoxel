@@ -20,7 +20,7 @@ varying vec3 max_pos_Box;
 
 
 void vertex() {
-	float padding = 2.0f;
+	float padding = 2.1f;
 	mat4 mvp = PROJECTION_MATRIX * MODELVIEW_MATRIX;
 	vec4 gl_Position = mvp * vec4(VERTEX, 1.0);
 	ViewProjectionMatrix = mvp;
@@ -74,7 +74,8 @@ void fragment() {
 	vec2 result = intersectAABB(ro,rd,boxMin,boxMax);
     bool rayIntersectionTest = result.y > result.x;
 	if(rayIntersectionTest == false){
-		color = vec3(1.0);
+//		color = vec3(1.0);
+	discard;
 	}
 //	
     	color = sqrt( color );

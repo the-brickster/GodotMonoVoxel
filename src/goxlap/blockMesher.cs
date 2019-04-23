@@ -63,20 +63,35 @@ namespace FPSGame.src.goxlap
             c.surfaceTool.Begin(Mesh.PrimitiveType.Points);
             c.surfaceTool.SetMaterial(mat);
             String initTime = DateTime.Now.ToString("HH:mm:ss:ffff");
-            for (int i = 0; i < CHUNK_SIZE; i += 1)
+            // for (int i = 0; i < CHUNK_SIZE; i += 1)
+            // {
+            //     for (int j = 0; j < CHUNK_SIZE; j += 1)
+            //     {
+            //         for (int k = 0; k < CHUNK_SIZE; k += 1)
+            //         {
+            //             if (c[i, j, k] == 0)
+            //             {
+            //                 continue;
+            //             }
+            //             createVoxel(i, j, k, ref c);
+            //         }
+            //     }
+            // }
+            int maxChunk = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
+
+            for (int i = 0; i < maxChunk; i++)
             {
-                for (int j = 0; j < CHUNK_SIZE; j += 1)
+                int x = i / (CHUNK_SIZE * CHUNK_SIZE);
+                int y = (i / CHUNK_SIZE) % CHUNK_SIZE;
+                int z = i % CHUNK_SIZE;
+                if (c[x, y, z] == 0)
                 {
-                    for (int k = 0; k < CHUNK_SIZE; k += 1)
-                    {
-                        if (c[i, j, k] == 0)
-                        {
-                            continue;
-                        }
-                        createVoxel(i, j, k, ref c);
-                    }
+                    continue;
                 }
+                createVoxel(x, y, z, ref c);
+
             }
+
             String pointCreationTime = DateTime.Now.ToString("HH:mm:ss:ffff");
             c.surfaceTool.Index();
             MeshInstance mesh = new MeshInstance();

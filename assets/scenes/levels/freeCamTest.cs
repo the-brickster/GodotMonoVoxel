@@ -13,7 +13,7 @@ public class freeCamTest : Spatial
     private ShaderMaterial material;
     public override async void _Ready()
     {
-        var voxelSize = 1.0f;
+        var voxelSize = 0.125f;
         float r = 0.02f;
         float g = 0.25f;
         float b = 0.9f;
@@ -39,7 +39,7 @@ public class freeCamTest : Spatial
 
 
         Console.WriteLine("LAYER: {0}", Convert.ToString(m.Layers, 2));
-        VoxelVolume basicVoxel = new VoxelVolume(new NoisePopulator(), 256, 256, 256, 64, voxelSize * 2.0f, mat);
+        VoxelVolume basicVoxel = new VoxelVolume(new NoisePopulator(), 256, 1024, 1024, 64, voxelSize * 2.0f, mat);
         // VoxelTypes s = basicVoxel[1,2,3];
         // Vector3 a = new Vector3(1,0,1);
         // Console.WriteLine("Vector before {0}",a);

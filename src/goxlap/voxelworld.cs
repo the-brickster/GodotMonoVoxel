@@ -128,7 +128,7 @@ namespace FPSGame.src.Common.goxlap
         public bool InitializeVoxelData(ChunkStruct[,,] chunkList)
         {
             noise = new FastNoise(1337);
-            noise.SetNoiseType(FastNoise.NoiseType.Cubic);
+            noise.SetNoiseType(FastNoise.NoiseType.CubicFractal);
             Console.WriteLine("Curr Thread ID: " + System.Threading.Thread.CurrentThread.ManagedThreadId + " Total MEM Usage: " + GC.GetTotalMemory(true));
             for (int i = 0; i < CHUNK_X_COUNT; i++)
             {
