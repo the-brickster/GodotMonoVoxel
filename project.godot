@@ -62,6 +62,10 @@ toggle_mouse_capture={
  ]
 }
 
+[mono]
+
+debugger_agent/wait_timeout=50000
+
 [physics]
 
 3d/physics_engine="Bullet"

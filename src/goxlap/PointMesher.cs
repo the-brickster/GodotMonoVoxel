@@ -6,14 +6,34 @@ namespace Goxlap.src.Goxlap
 {
     public class PointVoxelMesher : IVoxelMesher
     {
+        /*
+                            face = CanCreateVoxel(x, y - 1, z, ref c) == true ? face | 0b000001 : face | 0b000000;
+                    face = CanCreateVoxel(x, y + 1, z, ref c) == true ? face | 0b000010 : face | 0b000000;
+                    face = CanCreateVoxel(x + 1, y, z, ref c) == true ? face | 0b000100 : face | 0b000000;
+                    face = CanCreateVoxel(x - 1, y, z, ref c) == true ? face | 0b001000 : face | 0b000000;
+                    face = CanCreateVoxel(x, y, z + 1, ref c) == true ? face | 0b010000 : face | 0b000000;
+                    face = CanCreateVoxel(x, y, z - 1, ref c) == true ? face | 0b100000 : face | 0b000000;
+         */
+        static readonly Vector3[] Normals = new Vector3[]{
+            new Vector3(0f,-1f,0f),//Bottom
+            new Vector3(0f,1f,0f),//Top
+            new Vector3(1,0,0),//Right
+            new Vector3(-1,0,0),//Left
+            new Vector3(0,0,1),//front
+            new Vector3(0,0,-1)//back
+        };
         ShaderMaterial chunkMaterial;
-        float VOX_SIZE = VoxelConstants.VOX_SIZE * 2.0f;
+        float VOX_SIZE = VoxelConstants.VOX_SIZE;
         int CHUNK_SIZE = VoxelConstants.CHUNK_SIZE;
-        Color[] voxelTypes = new Color[] { new Color(0f, 0f, 0.55f, 1f), new Color(1f, 1f, 1f, 1f) };
+        public Color[] voxelTypes = new Color[] { new Color(0f, 0f, 0.55f, 1f), new Color(1f, 1f, 1f, 1f) };
         public PointVoxelMesher(ShaderMaterial material)
         {
             chunkMaterial = material;
 
+        }
+        public void SetVoxelTypes(ref Color[] colorArr)
+        {
+            voxelTypes = colorArr;
         }
         public MeshInstance CreateChunkMesh(ref VoxelChunk c)
         {
@@ -49,13 +69,32 @@ namespace Goxlap.src.Goxlap
                     // 0/0.7/0.4
                     if (face != 0b000000)
                     {
+                        int counter = 0;
+                        Vector3 normalAvg = Vector3.Zero;
+                        for (int j = 0; j < 6; j++)
+                        {
+                            int bitFlagN = (face >> j) & 1;
+                            if (bitFlagN == 1)
+                            {
+                                normalAvg = normalAvg + Normals[j];
+                                counter += 1;
+                            }
+                        }
+
+                        // Console.WriteLine("Value: {0}", Convert.ToString(face, 2).PadLeft(6, '0'));
                         count += 1;
-                        c.surface_tool.AddColor(voxelTypes[val - 1]);
+                        c.surface_tool.AddColor( new Color(1f, 1f, 1f, 1f));
                         Vector3 voxPosition = new Vector3((x) * VOX_SIZE, (y) * VOX_SIZE, (z) * VOX_SIZE);
                         voxPosition.x = voxPosition.x + (c.DX * CHUNK_SIZE * VOX_SIZE);
                         voxPosition.y = voxPosition.y + (c.DY * CHUNK_SIZE * VOX_SIZE);
                         voxPosition.z = voxPosition.z + (c.DZ * CHUNK_SIZE * VOX_SIZE);
+                        if (counter > 0)
+                        {
+                            normalAvg = normalAvg / counter;
+                            c.surface_tool.AddNormal(normalAvg);
+                        }
                         c.surface_tool.AddVertex(voxPosition);
+
 
                     }
                 }
@@ -63,8 +102,12 @@ namespace Goxlap.src.Goxlap
 
             c.surface_tool.Index();
             c.mesh = new MeshInstance();
+
             c.mesh.SetMesh(c.surface_tool.Commit());
             c.surface_tool.Clear();
+            c.mesh.MaterialOverride = chunkMaterial.Duplicate() as ShaderMaterial;
+
+            // Console.WriteLine("Mesh AABB Pos: {0} , Size: {1}, End: {2}",bb.Position,bb.Size,bb.End);
             if (count != 0)
                 return c.mesh;
             else

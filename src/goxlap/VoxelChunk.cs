@@ -13,6 +13,8 @@ namespace Goxlap.src.Goxlap
         public int CHUNK_SIZE;
         public SurfaceTool surface_tool;
         public MeshInstance mesh;
+
+        public utils.AABB boundingBox;
         /*
         - 0 - Top Chunk
         - 1 - Botton Chunk
@@ -31,6 +33,11 @@ namespace Goxlap.src.Goxlap
             CHUNK_SIZE = VoxelConstants.CHUNK_SIZE;
             voxel_data = new byte[VoxelConstants.CHUNK_SIZE_MAX];
             surface_tool = new SurfaceTool();
+            
+            float offset = CHUNK_SIZE*VoxelConstants.VOX_SIZE;
+            System.Numerics.Vector3 min = new System.Numerics.Vector3(DX*offset,DY*offset,DZ*offset);
+            System.Numerics.Vector3 max = new System.Numerics.Vector3(offset+DX*offset,offset+DY*offset,offset+DZ*offset);
+            boundingBox = new utils.AABB(min,max);
         }
 
         public byte get(int x, int y, int z)

@@ -1,0 +1,104 @@
+[gd_scene load_steps=6 format=2]
+
+[ext_resource path="res://assets/levels/Ruin_Level_Objects/Ruin_Level_Mesh_Lib.tres" type="MeshLibrary" id=1]
+[ext_resource path="res://assets/textures/pilsmall.jpg" type="Texture" id=2]
+[ext_resource path="res://assets/scenes/FreeCam.tscn" type="PackedScene" id=3]
+
+[sub_resource type="CapsuleMesh" id=1]
+mid_height = 2.5
+
+[sub_resource type="SpatialMaterial" id=2]
+albedo_texture = ExtResource( 2 )
+
+[node name="GridmapRoot" type="GridMap"]
+mesh_library = ExtResource( 1 )
+data = {
+"cells": PoolIntArray( 0, 0, 9, 12, 2, 1441795, 17, 2, 1441795, 22, 2, 1441795, 65513, 2, 3, 65518, 2, 3, 65523, 2, 3, 65528, 2, 3, 7, 3, 1441799, 5, 5, 8, 65531, 5, 8, 2, 6, 1441798, 7, 7, 1441795, 8, 7, 0, 12, 7, 1441795, 17, 7, 1441795, 22, 7, 1441795, 65513, 7, 3, 65518, 7, 3, 65523, 7, 536870915, 65528, 7, 536870915, 65534, 7, 538312711, 7, 8, 537919488, 65533, 8, 537919488, 7, 12, 538312707, 12, 12, 1441795, 17, 12, 1441795, 22, 12, 1441795, 65513, 12, 3, 65518, 12, 3, 65523, 12, 3, 65528, 12, 3, 2, 13, 5, 65533, 13, 5, 7, 17, 1441795, 12, 17, 1441795, 17, 17, 1441795, 22, 17, 1441795, 65513, 17, 3, 65518, 17, 3, 65523, 17, 536870915, 65528, 17, 536870915, 2, 18, 536870917, 65533, 18, 5, 7, 22, 536870915, 12, 22, 536870915, 17, 22, 536870915, 22, 22, 536870915, 65513, 22, 536870915, 65518, 22, 536870915, 65523, 22, 536870915, 65528, 22, 536870915, 2, 23, 536870917, 65533, 23, 536870917, 2, 65513, 536870917, 7, 65513, 536870915, 12, 65513, 536870915, 17, 65513, 536870915, 22, 65513, 536870915, 65513, 65513, 536870915, 65518, 65513, 536870915, 65523, 65513, 536870915, 65528, 65513, 536870915, 65533, 65513, 536870917, 2, 65518, 536870917, 7, 65518, 3, 12, 65518, 536870915, 17, 65518, 536870915, 22, 65518, 536870915, 65513, 65518, 536870915, 65518, 65518, 536870915, 65523, 65518, 536870915, 65528, 65518, 536870915, 65533, 65518, 536870917, 2, 65523, 536870917, 7, 65523, 536870915, 12, 65523, 3, 17, 65523, 536870915, 22, 65523, 536870915, 65513, 65523, 536870915, 65518, 65523, 536870915, 65523, 65523, 3, 65528, 65523, 3, 65533, 65523, 536870917, 2, 65528, 536870917, 3, 65528, 538312704, 7, 65528, 3, 12, 65528, 3, 17, 65528, 536870915, 22, 65528, 536870915, 65513, 65528, 536870915, 65518, 65528, 3, 65523, 65528, 3, 65528, 65528, 3, 65529, 65528, 538312704, 65533, 65528, 536870917, 5, 65531, 8, 65531, 65531, 8, 8, 65533, 0, 12, 65533, 538312707, 17, 65533, 538312707, 22, 65533, 538312707, 65513, 65533, 3, 65518, 65533, 3, 65523, 65533, 3, 65528, 65533, 3, 7, 65534, 1441796 )
+}
+__meta__ = {
+"_editor_clip_": 0,
+"_editor_floor_": Vector3( 0, 0, 0 )
+}
+
+[node name="Pil1" type="MeshInstance" parent="."]
+transform = Transform( -0.128323, 0.988123, 0.0845378, 0, -0.0852426, 0.99636, 0.991732, 0.127856, 0.0109386, -8.54892, 2.17848, 0.266175 )
+mesh = SubResource( 1 )
+material/0 = SubResource( 2 )
+
+[node name="Pil2" type="MeshInstance" parent="."]
+transform = Transform( -0.988348, -0.151654, -0.0129746, 0, -0.0852426, 0.99636, -0.152208, 0.984751, 0.0842494, 0.858452, 2.17848, -5.55336 )
+mesh = SubResource( 1 )
+material/0 = SubResource( 2 )
+
+[node name="Pil3" type="MeshInstance" parent="."]
+transform = Transform( -0.716476, 0.695072, 0.0594662, 0, -0.0852426, 0.99636, 0.697611, 0.713868, 0.0610743, -7.84213, 2.17848, -2.35635 )
+mesh = SubResource( 1 )
+material/0 = SubResource( 2 )
+
+[node name="Pil4" type="MeshInstance" parent="."]
+transform = Transform( -0.96124, 0.274709, 0.0235024, 0, -0.0852426, 0.99636, 0.275712, 0.957741, 0.0819386, -4.51169, 2.17848, -5.2613 )
+mesh = SubResource( 1 )
+material/0 = SubResource( 2 )
+
+[node name="Pil5" type="MeshInstance" parent="."]
+transform = Transform( -1, 8.74228e-008, 0, 3.82137e-015, 4.37114e-008, 1, 8.74227e-008, 1, -4.37114e-008, 1, 2, -30 )
+mesh = SubResource( 1 )
+material/0 = SubResource( 2 )
+
+[node name="Pil6" type="MeshInstance" parent="."]
+transform = Transform( -1, 8.74228e-008, 0, 3.82137e-015, 4.37114e-008, 1, 8.74227e-008, 1, -4.37114e-008, 4, 2, -30 )
+mesh = SubResource( 1 )
+material/0 = SubResource( 2 )
+
+[node name="Pil7" type="MeshInstance" parent="."]
+transform = Transform( -1, 8.74228e-008, 0, 3.82137e-015, 4.37114e-008, 1, 8.74227e-008, 1, -4.37114e-008, -2, 2, -30 )
+mesh = SubResource( 1 )
+material/0 = SubResource( 2 )
+
+[node name="Pil8" type="MeshInstance" parent="."]
+transform = Transform( -1, 8.74228e-008, 0, 3.82137e-015, 4.37114e-008, 1, 8.74227e-008, 1, -4.37114e-008, -5, 2, -30 )
+mesh = SubResource( 1 )
+material/0 = SubResource( 2 )
+
+[node name="Pil9" type="MeshInstance" parent="."]
+transform = Transform( -1, 8.74228e-008, 0, 3.82137e-015, 4.37114e-008, 1, 8.74227e-008, 1, -4.37114e-008, -10.8428, 2, -30 )
+mesh = SubResource( 1 )
+material/0 = SubResource( 2 )
+
+[node name="Pil10" type="MeshInstance" parent="."]
+transform = Transform( -1, 8.74228e-008, 0, 3.82137e-015, 4.37114e-008, 1, 8.74227e-008, 1, -4.37114e-008, -7.84275, 2, -30 )
+mesh = SubResource( 1 )
+material/0 = SubResource( 2 )
+
+[node name="Pil11" type="MeshInstance" parent="."]
+transform = Transform( -1, 8.74228e-008, 0, 3.82137e-015, 4.37114e-008, 1, 8.74227e-008, 1, -4.37114e-008, -13.8428, 2, -30 )
+mesh = SubResource( 1 )
+material/0 = SubResource( 2 )
+
+[node name="Pil12" type="MeshInstance" parent="."]
+transform = Transform( -1, 8.74228e-008, 0, 3.82137e-015, 4.37114e-008, 1, 8.74227e-008, 1, -4.37114e-008, -16.8428, 2, -30 )
+mesh = SubResource( 1 )
+material/0 = SubResource( 2 )
+
+[node name="Pil13" type="MeshInstance" parent="."]
+transform = Transform( -1, 8.74228e-008, 0, 3.82137e-015, 4.37114e-008, 1, 8.74227e-008, 1, -4.37114e-008, 13.1574, 2, -30 )
+mesh = SubResource( 1 )
+material/0 = SubResource( 2 )
+
+[node name="Pil14" type="MeshInstance" parent="."]
+transform = Transform( -1, 8.74228e-008, 0, 3.82137e-015, 4.37114e-008, 1, 8.74227e-008, 1, -4.37114e-008, 16.1574, 2, -30 )
+mesh = SubResource( 1 )
+material/0 = SubResource( 2 )
+
+[node name="Pil15" type="MeshInstance" parent="."]
+transform = Transform( -1, 8.74228e-008, 0, 3.82137e-015, 4.37114e-008, 1, 8.74227e-008, 1, -4.37114e-008, 10.1574, 2, -30 )
+mesh = SubResource( 1 )
+material/0 = SubResource( 2 )
+
+[node name="Pil16" type="MeshInstance" parent="."]
+transform = Transform( -1, 8.74228e-008, 0, 3.82137e-015, 4.37114e-008, 1, 8.74227e-008, 1, -4.37114e-008, 7.15739, 2, -30 )
+mesh = SubResource( 1 )
+material/0 = SubResource( 2 )
+
+[node name="FreeCam" parent="." instance=ExtResource( 3 )]
+fov = 90.0
