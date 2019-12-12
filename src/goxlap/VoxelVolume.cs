@@ -37,17 +37,20 @@ namespace Goxlap.src.Goxlap
         //Begin Frustum methods
         uint width;
         uint height;
+        BoundingRect ViewportRect;
         //Combined Projection and View Matrix
         System.Numerics.Matrix4x4 comboMatrix;
         System.Numerics.Matrix4x4 projMatrix;
         System.Numerics.Matrix4x4 viewMatrix;
         System.Numerics.Matrix4x4 inverseMat;
-        float angleOfView;
+        float fovInDegrees;
         float near;
         float far;
         float imageAspectRatio;
         float b = 0, t = 0, l = 0, r = 0;// l - left, r - right, b - bottom, t - top
         public Godot.Plane[] frustumPlanes = new Godot.Plane[6];
+
+        public BoundSphere camSphere = new BoundSphere(new System.Numerics.Vector3(0f, 0f, 0f), 10f);
         //----------------------
 
         public VoxelVolume(int height, int length, int width, int CHUNK_SIZE, float voxelSize, string materialLoc, IVoxelDataPopulate populator, Camera cam)
@@ -106,6 +109,10 @@ namespace Goxlap.src.Goxlap
 
         public async override void _Ready()
         {
+            width = (uint)this.GetViewport().Size.x;
+            height = (uint)this.GetViewport().Size.y;
+            ViewportRect.x = 0;ViewportRect.y=0;
+            ViewportRect.extent = this.GetViewport().Size.toNumericVector2();
             var screenRes = GetViewport().Size;
             var screenPos = GetViewport().GetVisibleRect().Position;
             voxelMat.SetShaderParam("albedo", new Color(0, 0, 1, 1));
@@ -116,12 +123,16 @@ namespace Goxlap.src.Goxlap
             await ChunkDataPopulate();
             await ChunkMeshCreation();
             Console.WriteLine(cam.VOffset + " " + cam.HOffset);
+
             SetupProjData();
         }
 
         //  // Called every frame. 'delta' is the elapsed time since the previous frame.
         public async override void _Process(float delta)
         {
+            this.camSphere.position.X = cam.GlobalTransform.origin.x;
+            this.camSphere.position.Y = cam.GlobalTransform.origin.y;
+            this.camSphere.position.Z = cam.GlobalTransform.origin.z;
             while (!meshingQueue.IsEmpty)
             {
                 // Console.WriteLine("Called");
@@ -134,29 +145,40 @@ namespace Goxlap.src.Goxlap
 
             if (collection.Count > 0)
             {
-
-                // gluPerspective(ref angleOfView, ref imageAspectRatio, ref near, ref far, ref b, ref t, ref l, ref r);
+                // gluPerspective(ref fovInDegrees, ref imageAspectRatio, ref near, ref far, ref b, ref t, ref l, ref r);
                 // glFrustum(ref b, ref t, ref l, ref r, ref near, ref far, ref projMatrix);
+                // gluPerspective(ref projMatrix,ref fovInDegrees,imageAspectRatio,near,far, cam.KeepAspect == Camera.KeepAspectEnum.Width);
                 // createViewMatrix(cam, ref viewMatrix);
                 // System.Numerics.Matrix4x4.Invert(viewMatrix,out inverseMat);
                 // comboMatrix = projMatrix.multiplyColMaj(viewMatrix);
-                // extractGLPlanes(ref frustumPlanes,cam,ref comboMatrix,true);
+
+                // extractGLPlanes(ref frustumPlanes, cam, ref comboMatrix,near,far, false);
+                Godot.Collections.Array frustumP = cam.GetFrustum();
                 foreach (VoxelChunk chunk in collection)
                 {
+
                     utils.AABB box = chunk.boundingBox;
+                    
                     // int res = VoxelVolume.boxInFrustum(cam.GetFrustum(), box);
-                    bool res = VoxelVolume.insideFrustum(cam.GetFrustum(),box);
+                    bool res = VoxelVolume.insideFrustum(frustumP, box) || VoxelVolume.intersectsFrustum(frustumP,box) ||this.camSphere.intersectsAABB(box);
                     // Console.WriteLine(chunk.mesh.GetSurfaceMaterial(0));
                     var m = chunk.mesh.MaterialOverride as ShaderMaterial;
                     // Console.WriteLine("-------------------------------");
+
                     
-                    //Red shown
-                    m.SetShaderParam("albedo", new Color(1, 0, 0, 1));
-                    
-                    if (!res)
+                    //Blue not shown
+                    m.SetShaderParam("albedo", new Color(0, 0, 1, 1));
+                    if (res)
                     {
-                        //Blue not shown
-                        m.SetShaderParam("albedo", new Color(0, 0, 1, 1));
+                        //Red shown
+                        m.SetShaderParam("albedo", new Color(1, 0, 0, 1));
+                        Stopwatch stopwatch = Stopwatch.StartNew();
+                        stopwatch.Start();
+                        BoundingRect rect = AABB.AABBtoScreenRect(box, cam);
+                        
+                        stopwatch.Stop();
+                        bool isInView = BoundingRect.IntersectsRect(ViewportRect,rect);
+                        Console.WriteLine("Bounding Rect: {0}, completed in {1}ms, intersects viewport {2}", rect, stopwatch.ElapsedMilliseconds,isInView);
                     }
 
 
@@ -165,39 +187,44 @@ namespace Goxlap.src.Goxlap
                 }
 
             }
-            
+
 
         }
-        public static bool insideFrustum(Godot.Collections.Array planes, utils.AABB box){
+        public static bool insideFrustum(Godot.Collections.Array planes, utils.AABB box)
+        {
             Vector3 half_extents = box.size.toGDVector3() * 0.5f;
             Vector3 ofs = box.center.toGDVector3();
 
-            for(int i =0; i < planes.Count;i++){
+            for (int i = 0; i < planes.Count; i++)
+            {
                 Plane p = (Plane)planes[i];
                 Vector3 point = new Vector3(
-				(p.Normal.x <= 0) ? -half_extents.x : half_extents.x,
-				(p.Normal.y <= 0) ? -half_extents.y : half_extents.y,
-				(p.Normal.z <= 0) ? -half_extents.z : half_extents.z);
-		        point += ofs;
-                if(p.Normal.Dot(point) >p.D){
+                (p.Normal.x <= 0) ? -half_extents.x : half_extents.x,
+                (p.Normal.y <= 0) ? -half_extents.y : half_extents.y,
+                (p.Normal.z <= 0) ? -half_extents.z : half_extents.z);
+                point += ofs;
+                if (p.Normal.Dot(point) > p.D)
+                {
                     return false;
                 }
             }
-
             return true;
         }
-        public static bool intersectsFrustum(Godot.Collections.Array planes, utils.AABB box){
+        public static bool intersectsFrustum(Godot.Collections.Array planes, utils.AABB box)
+        {
             Vector3 half_extents = box.size.toGDVector3() * 0.5f;
             Vector3 ofs = box.center.toGDVector3();
 
-            for(int i =0; i < planes.Count;i++){
+            for (int i = 0; i < planes.Count; i++)
+            {
                 Plane p = (Plane)planes[i];
                 Vector3 point = new Vector3(
-				(p.Normal.x > 0) ? -half_extents.x : half_extents.x,
-				(p.Normal.y > 0) ? -half_extents.y : half_extents.y,
-				(p.Normal.z > 0) ? -half_extents.z : half_extents.z);
-		        point += ofs;
-                if(p.Normal.Dot(point) > (p.D*100f)){
+                (p.Normal.x > 0) ? -half_extents.x : half_extents.x,
+                (p.Normal.y > 0) ? -half_extents.y : half_extents.y,
+                (p.Normal.z > 0) ? -half_extents.z : half_extents.z);
+                point += ofs;
+                if (p.Normal.Dot(point) > (p.D * 100f))
+                {
                     return false;
                 }
             }
@@ -225,8 +252,8 @@ namespace Goxlap.src.Goxlap
                 plane.Normal = utils.GDExtension.toNumericVector3(tmp.Normal);
                 // plane.Normal = System.Numerics.Vector3.Negate(plane.Normal);
 
-                
-                distance = System.Numerics.Vector3.Dot(plane.Normal, center)+plane.D;
+
+                distance = System.Numerics.Vector3.Dot(plane.Normal, center) + plane.D;
                 // Console.WriteLine("Norm: {0}, D:{1}",plane.Normal,plane.D);
                 if (distance < -radius.X)
                 {
@@ -289,6 +316,7 @@ namespace Goxlap.src.Goxlap
 
                 pointMesher.SetVoxelTypes(ref colorArr);
                 Console.WriteLine("Complete!");
+
                 return true;
             });
         }
@@ -334,18 +362,18 @@ namespace Goxlap.src.Goxlap
                     Stopwatch sw = Stopwatch.StartNew();
                     MeshInstance m = mesher.CreateChunkMesh(ref chunkArr[i]);
                     sw.Stop();
-                    // if (sw.ElapsedMilliseconds > 0)
-                    //     Console.WriteLine("Time taken: {0}ms, {1}", sw.ElapsedMilliseconds, chunkArr[i]);
+                    if (sw.ElapsedMilliseconds > 0)
+                        Console.WriteLine("Time taken: {0}ms, {1}", sw.ElapsedMilliseconds, chunkArr[i]);
                     if (m != null)
                     {
                         CubeMesh c = new CubeMesh();
-                        
+
                         c.Size = chunkArr[i].boundingBox.size.toGDVector3();
                         MeshInstance mesh = new MeshInstance();
                         mesh.Mesh = c;
                         mesh.Translation = chunkArr[i].boundingBox.center.toGDVector3();
-                        Console.WriteLine("Mesh AABB {0}",mesh.GetAabb().Position);
-                        Console.WriteLine("AABB custom {0}", chunkArr[i].boundingBox.center.toGDVector3());
+                        // Console.WriteLine("Mesh AABB {0}",mesh.GetAabb().Position);
+                        // Console.WriteLine("AABB custom {0}", chunkArr[i].boundingBox.center.toGDVector3());
                         meshingQueue.Enqueue(m);
                         meshingQueue.Enqueue(mesh);
                         this.collection.Add(chunkArr[i]);
@@ -357,35 +385,41 @@ namespace Goxlap.src.Goxlap
         }
         public void SetupProjData()
         {
-            width = (uint)this.GetViewport().Size.x;
-            height = (uint)this.GetViewport().Size.y;
+
             comboMatrix = new System.Numerics.Matrix4x4();
-            angleOfView = 80.0f;
+            fovInDegrees = 80.0f;
             near = cam.Near;
             far = cam.Far;
             imageAspectRatio = width / (float)height;
-            Console.WriteLine("FOV: {0}, NEAR: {1}, FAR {2}, Aspect Ratio: {3}, Width {4}, Height {5}",angleOfView,near,far,imageAspectRatio,width,height);
-            gluPerspective(ref angleOfView, ref imageAspectRatio, ref near, ref far, ref b, ref t, ref l, ref r);
+            Console.WriteLine("FOV: {0}, NEAR: {1}, FAR {2}, Aspect Ratio: {3}, Width {4}, Height {5}", fovInDegrees, near, far, imageAspectRatio, width, height);
+            gluPerspective(ref fovInDegrees, ref imageAspectRatio, ref near, ref far, ref b, ref t, ref l, ref r);
             // glFrustum(ref b, ref t, ref l, ref r, ref near, ref far, ref comboMatrix);
-            // gluPerspective(ref angleOfView, ref imageAspectRatio, ref near, ref far, ref b, ref t, ref l, ref r);
-                glFrustum(ref b, ref t, ref l, ref r, ref near, ref far, ref projMatrix);
-                createViewMatrix(cam, ref viewMatrix);
-                // System.Numerics.Matrix4x4.Invert(viewMatrix,out inverseMat);
-                comboMatrix = projMatrix.multiplyColMaj(viewMatrix);
-                extractGLPlanes(ref frustumPlanes,cam,ref comboMatrix,true);
-            
+            glFrustum(ref b, ref t, ref l, ref r, ref near, ref far, ref projMatrix);
+            // gluPerspective(ref projMatrix,ref fovInDegrees,imageAspectRatio,near,far,cam.KeepAspect == Camera.KeepAspectEnum.Width);
+            createViewMatrix(cam, ref viewMatrix);
+            // System.Numerics.Matrix4x4.Invert(viewMatrix,out inverseMat);
+            comboMatrix = viewMatrix.multiplyColMaj(projMatrix);
+            Console.WriteLine("Proj Mat: {0}",projMatrix);
+            extractGLPlanes(ref frustumPlanes, cam, ref comboMatrix,near,far, true);
+            Console.WriteLine("Custom Planes:");
+            foreach (var item in frustumPlanes)
+            {
+                Plane p = (Plane)item;
+                Console.WriteLine("Plane: {0}", p);
+            }
         }
-        public static void createViewMatrix(Camera camera, ref System.Numerics.Matrix4x4 viewMat){
+        public static void createViewMatrix(Camera camera, ref System.Numerics.Matrix4x4 viewMat)
+        {
             Basis camBasis = camera.GlobalTransform.basis;
             Vector3 translation = camera.GlobalTransform.origin;
             Vector3 col0 = camBasis.Column0;
             Vector3 col1 = camBasis.Column1;
             Vector3 col2 = camBasis.Column2;
 
-            viewMat.M11 = col0.x;viewMat.M21 = col0.y; viewMat.M31 = col0.z; viewMat.M41 = 0;
-            viewMat.M12 = col1.x;viewMat.M22 = col1.y; viewMat.M32 = col1.z; viewMat.M42 = 0;
-            viewMat.M13 = col2.x;viewMat.M23 = col2.y; viewMat.M33 = col2.z; viewMat.M43 = 0;
-            viewMat.M14 = translation.x; viewMat.M24=translation.y; viewMat.M34=translation.z; viewMat.M44 = 0;
+            viewMat.M11 = col0.x; viewMat.M21 = col0.y; viewMat.M31 = col0.z; viewMat.M41 = 0;
+            viewMat.M12 = col1.x; viewMat.M22 = col1.y; viewMat.M32 = col1.z; viewMat.M42 = 0;
+            viewMat.M13 = col2.x; viewMat.M23 = col2.y; viewMat.M33 = col2.z; viewMat.M43 = 0;
+            viewMat.M14 = translation.x; viewMat.M24 = translation.y; viewMat.M34 = translation.z; viewMat.M44 = 0;
 
         }
         public static void gluPerspective(ref float angleOfView,
@@ -393,11 +427,70 @@ namespace Goxlap.src.Goxlap
             ref float n, ref float f,
             ref float b, ref float t, ref float l, ref float r)
         {
-            float scale = Mathf.Tan(angleOfView * 0.5f * Mathf.Pi / 180) * n;
-            r = imageAspectRatio * scale;
-            l = -r;
-            t = scale;
-            b = -t;
+            // float scale = Mathf.Tan(angleOfView * Mathf.Pi / 360.0f) * n;
+            // r = imageAspectRatio * scale;
+            // l = -r;
+            // t = scale;
+            // b = -t;
+            float tangent = Mathf.Tan(angleOfView/2.0f * GDExtension.DEG2RAD);
+            float nearHeight = n * tangent;
+            float nearWidth = nearHeight * imageAspectRatio;
+
+            l = -nearWidth; r = nearWidth;
+            b = -nearHeight; t = nearHeight;
+        }
+        public static void gluPerspective(ref System.Numerics.Matrix4x4 matrix, ref float fovyInDegrees, float aspectRatio,
+        float znear, float zfar, bool flip_fov){
+            if(flip_fov){
+                fovyInDegrees = get_fovy(fovyInDegrees,1.0f/aspectRatio);
+            }
+            float sine, cotangent, deltaZ;
+	        float radians = fovyInDegrees / 2.0f * Mathf.Pi / 180.0f;
+            deltaZ = zfar - znear;
+	        sine = Mathf.Sin(radians);
+            if ((deltaZ == 0) || (sine == 0) || (aspectRatio == 0)) {
+		        return;
+	        }
+	        cotangent = Mathf.Cos(radians) / sine;
+            matrix = System.Numerics.Matrix4x4.Identity;
+
+            matrix.M11 = cotangent / aspectRatio;
+            matrix.M22 = cotangent;
+            matrix.M33 = -(zfar + znear) / deltaZ;
+            matrix.M34 = -1;
+            matrix.M43 = -2 * znear * zfar / deltaZ;
+            matrix.M44 = 0;
+        }
+        static float get_fovy(float fovx,float aspect){
+            return Mathf.Rad2Deg(Mathf.Atan(aspect * Mathf.Tan(Mathf.Deg2Rad(fovx) * 0.5f)) * 2.0f);
+        }
+        public static void gluFrustum(ref System.Numerics.Matrix4x4 M, float left, float right, float bottom, float top,
+        float znear, float zfar){
+            float temp, temp2, temp3, temp4;
+            temp = 2.0f * znear;
+            temp2 = right - left;
+            temp3 = top - bottom;
+            temp4 = zfar - znear;
+
+            M.M11 = temp / temp2;
+            M.M21 = 0;
+            M.M31 = 0;
+            M.M41 = 0;
+
+            M.M12 = 0;
+            M.M22 = temp / temp3;
+            M.M32 = 0;
+            M.M42 = 0;
+
+            M.M13 = (right + left) / temp2;
+            M.M23 = (top + bottom) / temp3;
+            M.M33 = (-zfar - znear) / temp4;
+            M.M43 = -1;
+
+            M.M14 = 0;
+            M.M24 = 0;
+            M.M34 = (-temp * zfar) / temp4;
+            M.M44 = 0;
         }
         public static void glFrustum(
             ref float b, ref float t, ref float l, ref float r,
@@ -405,90 +498,94 @@ namespace Goxlap.src.Goxlap
             ref System.Numerics.Matrix4x4 M
         )
         {
-            M.M11 = 2 * n / (r - 1);
-            M.M12 = 0;
-            M.M13 = 0;
-            M.M14 = 0;
-
+            Console.WriteLine("---------------Bottom: {0}, Top {1}, Left: {2}, right: {3}, near {4}, far {5}",b,t,l,r,n,f);
+            M.M11 = (2 * n) / (r - l);
             M.M21 = 0;
-            M.M22 = 2 * n / (t - b);
-            M.M23 = 0;
-            M.M24 = 0;
-
-            M.M31 = (r + l) / (r - l);
-            M.M32 = (t + b) / (t - b);
-            M.M33 = -(f + n) / (f - n);
-            M.M34 = -1;
-
+            M.M31 = 0;
             M.M41 = 0;
+
+            M.M12 = 0;
+            M.M22 = (2 * n) / (t - b);
+            M.M32 = 0;
             M.M42 = 0;
-            M.M43 = -2 * f * n / (f - n);
+
+            M.M13 = (r + l) / (r - l);
+            M.M23 = (t + b) / (t - b);
+            M.M33 = -(f + n) / (f - n);
+            M.M43 = -1;
+
+            M.M14 = 0;
+            M.M24 = 0;
+            M.M34 = (-2 * f * n) / (f - n);
             M.M44 = 0;
 
         }
-        public static void extractGLPlanes(ref Plane[] planes, Camera cam, ref System.Numerics.Matrix4x4 projMatrix, bool normalize)
+        public static void extractGLPlanes(ref Plane[] planes, Camera cam, ref System.Numerics.Matrix4x4 projMatrix,float near,float far, bool normalize)
         {
             float a, b, c, d = 0;
-            //Left
-            a = projMatrix.M41 + projMatrix.M11;
-            b = projMatrix.M42 + projMatrix.M12;
-            c = projMatrix.M43 + projMatrix.M13;
-            d = projMatrix.M44 + projMatrix.M14;
-            planes[0] = new Plane(a, b, c, d);
-            planes[0].Normal = -planes[0].Normal;
-            // planes[0].Normalized();
-            // planes[0] = cam.GetCameraTransform().xFromPlane(ref planes[0]);
-
-            //Right
-            a = projMatrix.M41 - projMatrix.M11;
-            b = projMatrix.M42 - projMatrix.M12;
-            c = projMatrix.M43 - projMatrix.M13;
-            d = projMatrix.M44 - projMatrix.M14;
-            planes[1] = new Plane(a, b, c, d);
-            planes[1].Normal = -planes[1].Normal;
-            // planes[1].Normalized();
-            // planes[1] = cam.GetCameraTransform().xFromPlane(ref planes[1]);
-
-            //Top
-            a = projMatrix.M41 - projMatrix.M21;
-            b = projMatrix.M42 - projMatrix.M22;
-            c = projMatrix.M43 - projMatrix.M23;
-            d = projMatrix.M44 - projMatrix.M24;
-            planes[2] = new Plane(a, b, c, d);
-            planes[2].Normal = -planes[2].Normal;
-            // planes[2].Normalized();
-            // planes[2] = cam.GetCameraTransform().xFromPlane(ref planes[2]);
-
-            //Bottom
-            a = projMatrix.M41 + projMatrix.M21;
-            b = projMatrix.M42 + projMatrix.M22;
-            c = projMatrix.M43 + projMatrix.M23;
-            d = projMatrix.M44 + projMatrix.M24;
-            planes[3] = new Plane(a, b, c, d);
-            planes[3].Normal = -planes[3].Normal;
-            // planes[3].Normalized();
-            // planes[3] = cam.GetCameraTransform().xFromPlane(ref planes[3]);
 
             //Near
-            a = projMatrix.M41 + projMatrix.M31;
-            b = projMatrix.M42 + projMatrix.M32;
-            c = projMatrix.M43 + projMatrix.M33;
-            d = projMatrix.M44 + projMatrix.M34;
-            planes[4] = new Plane(a, b, c, d);
-            planes[4].Normal = -planes[4].Normal;
-            // planes[4].Normalized();
-            // planes[4] = cam.GetCameraTransform().xFromPlane(ref planes[4]);
+            a = projMatrix.M14 + projMatrix.M31;
+            b = projMatrix.M24 + projMatrix.M23;
+            c = projMatrix.M34 + projMatrix.M33;
+            d = projMatrix.M44 + projMatrix.M43;
+            planes[0] = new Plane(a, b, c, near);
+            // planes[0].Normal = -planes[0].Normal;
+            // planes[0].Normalized();
+            // cam.GetCameraTransform().xFromPlane(ref planes[0]);
 
             //Far
-            a = projMatrix.M41 - projMatrix.M31;
-            b = projMatrix.M42 - projMatrix.M32;
-            c = projMatrix.M43 - projMatrix.M33;
-            d = projMatrix.M44 - projMatrix.M34;
+            a = projMatrix.M14 - projMatrix.M13;
+            b = projMatrix.M24 - projMatrix.M23;
+            c = projMatrix.M34 - projMatrix.M33;
+            d = projMatrix.M44 - projMatrix.M43;
+            planes[1] = new Plane(a, b, c, far);
+            // planes[1].Normal = -planes[1].Normal;
+            // planes[1].Normalized();
+            // cam.GetCameraTransform().xFromPlane(ref planes[1]);
+
+
+            //Left
+            a = projMatrix.M14 + projMatrix.M11;
+            b = projMatrix.M24 + projMatrix.M21;
+            c = projMatrix.M34 + projMatrix.M31;
+            d = projMatrix.M44 + projMatrix.M41;
+            planes[2] = new Plane(a, b, c, d);
+            // planes[2].Normal = -planes[2].Normal;
+            // planes[2].Normalized();
+            // cam.GetCameraTransform().xFromPlane(ref planes[2]);
+
+             //Top
+            a = projMatrix.M14 - projMatrix.M12;
+            b = projMatrix.M24 - projMatrix.M22;
+            c = projMatrix.M34 - projMatrix.M32;
+            d = projMatrix.M44 - projMatrix.M42;
+            planes[3] = new Plane(a, b, c, d);
+            // planes[3].Normal = -planes[3].Normal;
+            // planes[3].Normalized();
+            // cam.GetCameraTransform().xFromPlane(ref planes[3]);
+
+            //Right
+            a = projMatrix.M14 - projMatrix.M11;
+            b = projMatrix.M24 - projMatrix.M21;
+            c = projMatrix.M34 - projMatrix.M31;
+            d = projMatrix.M44 - projMatrix.M41;
+            planes[4] = new Plane(a, b, c, d);
+            // planes[4].Normal = -planes[4].Normal;
+            // planes[4].Normalized();
+            // cam.GetCameraTransform().xFromPlane(ref planes[4]);
+
+            //Bottom
+            a = projMatrix.M14 + projMatrix.M12;
+            b = projMatrix.M24 + projMatrix.M22;
+            c = projMatrix.M34 + projMatrix.M32;
+            d = projMatrix.M44 + projMatrix.M42;
             planes[5] = new Plane(a, b, c, d);
-            planes[5].Normal = -planes[5].Normal;
+            // planes[5].Normal = -planes[5].Normal;
             // planes[5].Normalized();
-            // planes[5] = cam.GetCameraTransform().xFromPlane(ref planes[5]);
-            
+            // cam.GetCameraTransform().xFromPlane(ref planes[5]);
+
+
 
             if (normalize)
             {
@@ -558,7 +655,7 @@ namespace Goxlap.src.Goxlap
                 }
 
             }
-            Console.WriteLine("Complete chunk population: {0},{1},{2}", DX, DY, DZ);
+            // Console.WriteLine("Complete chunk population: {0},{1},{2}", DX, DY, DZ);
         }
     }
     class BasicPopulator : IVoxelDataPopulate

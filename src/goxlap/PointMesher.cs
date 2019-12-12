@@ -6,6 +6,7 @@ namespace Goxlap.src.Goxlap
 {
     public class PointVoxelMesher : IVoxelMesher
     {
+        
         /*
                             face = CanCreateVoxel(x, y - 1, z, ref c) == true ? face | 0b000001 : face | 0b000000;
                     face = CanCreateVoxel(x, y + 1, z, ref c) == true ? face | 0b000010 : face | 0b000000;

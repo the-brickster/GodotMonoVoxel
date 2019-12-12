@@ -84,7 +84,7 @@ func _input(event):
 func _process(delta):
 
 	fpsTextLabel.text = str(Engine.get_frames_per_second())
-	camPosText.text = str(self.get_camera_transform())
+	camPosText.text = str(self.get_camera_transform().origin)
 	
 	if Input.is_action_just_pressed("ui_cancel"):
 		get_tree().quit()
