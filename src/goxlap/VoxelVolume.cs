@@ -35,8 +35,8 @@ namespace Goxlap.src.Goxlap
 
         //----------------------
         //Begin Frustum methods
-        uint width;
-        uint height;
+        int width;
+        int height;
         BoundingRect ViewportRect;
         //Combined Projection and View Matrix
         System.Numerics.Matrix4x4 comboMatrix;
@@ -109,8 +109,8 @@ namespace Goxlap.src.Goxlap
 
         public async override void _Ready()
         {
-            width = (uint)this.GetViewport().Size.x;
-            height = (uint)this.GetViewport().Size.y;
+            width = (int)this.GetViewport().Size.x;
+            height = (int)this.GetViewport().Size.y;
             ViewportRect.x = 0;ViewportRect.y=0;
             ViewportRect.extent = this.GetViewport().Size.toNumericVector2();
             var screenRes = GetViewport().Size;
@@ -178,7 +178,7 @@ namespace Goxlap.src.Goxlap
                         
                         stopwatch.Stop();
                         bool isInView = BoundingRect.IntersectsRect(ViewportRect,rect);
-                        Console.WriteLine("Bounding Rect: {0}, completed in {1}ms, intersects viewport {2}", rect, stopwatch.ElapsedMilliseconds,isInView);
+                        // Console.WriteLine("Bounding Rect: {0}, completed in {1}ms, intersects viewport {2}", rect, stopwatch.ElapsedMilliseconds,isInView);
                     }
 
 
@@ -387,15 +387,15 @@ namespace Goxlap.src.Goxlap
         {
 
             comboMatrix = new System.Numerics.Matrix4x4();
-            fovInDegrees = 80.0f;
+            fovInDegrees = 80;
             near = cam.Near;
             far = cam.Far;
             imageAspectRatio = width / (float)height;
             Console.WriteLine("FOV: {0}, NEAR: {1}, FAR {2}, Aspect Ratio: {3}, Width {4}, Height {5}", fovInDegrees, near, far, imageAspectRatio, width, height);
-            gluPerspective(ref fovInDegrees, ref imageAspectRatio, ref near, ref far, ref b, ref t, ref l, ref r);
+            // gluPerspective(ref fovInDegrees, ref imageAspectRatio, ref near, ref far, ref b, ref t, ref l, ref r);
             // glFrustum(ref b, ref t, ref l, ref r, ref near, ref far, ref comboMatrix);
-            glFrustum(ref b, ref t, ref l, ref r, ref near, ref far, ref projMatrix);
-            // gluPerspective(ref projMatrix,ref fovInDegrees,imageAspectRatio,near,far,cam.KeepAspect == Camera.KeepAspectEnum.Width);
+            // glFrustum(ref b, ref t, ref l, ref r, ref near, ref far, ref projMatrix);
+            gluPerspective(ref projMatrix,ref fovInDegrees,imageAspectRatio,near,far,cam.KeepAspect == Camera.KeepAspectEnum.Width);
             createViewMatrix(cam, ref viewMatrix);
             // System.Numerics.Matrix4x4.Invert(viewMatrix,out inverseMat);
             comboMatrix = viewMatrix.multiplyColMaj(projMatrix);
@@ -407,11 +407,33 @@ namespace Goxlap.src.Goxlap
                 Plane p = (Plane)item;
                 Console.WriteLine("Plane: {0}", p);
             }
+            System.Numerics.Matrix4x4 matTest = new System.Numerics.Matrix4x4(1,2,1,1,0,1,0,1,2,3,4,1,0,0,0,1);
+            System.Numerics.Vector3 vecTest = new System.Numerics.Vector3(1,2,-11);
+            System.Numerics.Vector3 result = GDExtension.TransfromColMaj(vecTest,matTest);
+            Console.WriteLine($"Test transform: {result}");
+            Vector3 vecTest2 = new Vector3(1,0,-11);
+            Vector2 result2 = cam.UnprojectPosition(vecTest2);
+
+            Vector2 result1 = world2Screen(cam,vecTest2,ref viewMatrix,ref projMatrix,width,height);
+            Console.WriteLine($"Godot Vector Projection {result2}, My Vector Projection {result1}, Width: {width}, height: {height}");
+        }
+        public static Vector2 world2Screen(Camera cam,Vector3 pos, ref System.Numerics.Matrix4x4 viewMat, ref System.Numerics.Matrix4x4 projMatrix, int screenWidth, int screenHeight){
+            // Vector3 tmp = pos.toGDVector3();
+            
+            // System.Numerics.Vector3 newPos = cam.GetCameraTransform().XformInv(tmp).toNumericVector3();
+            // newPos = GDExtension.TransfromColMaj(newPos,projMatrix);
+            System.Numerics.Vector3 newPos = cam.GetCameraTransform().Xform(pos).toNumericVector3();
+            newPos = GDExtension.TransfromColMaj(newPos,projMatrix);
+            
+            newPos.X = (newPos.X * 0.5f + 0.5f) * screenWidth;
+            newPos.Y = (-newPos.Y * 0.5f + 0.5f) * screenHeight;
+            return new Vector2(newPos.X,newPos.Y);
         }
         public static void createViewMatrix(Camera camera, ref System.Numerics.Matrix4x4 viewMat)
         {
-            Basis camBasis = camera.GlobalTransform.basis;
-            Vector3 translation = camera.GlobalTransform.origin;
+            viewMat = System.Numerics.Matrix4x4.Identity;
+            Basis camBasis = camera.GetCameraTransform().basis;
+            Vector3 translation = camera.GetCameraTransform().origin;
             Vector3 col0 = camBasis.Column0;
             Vector3 col1 = camBasis.Column1;
             Vector3 col2 = camBasis.Column2;
@@ -419,7 +441,7 @@ namespace Goxlap.src.Goxlap
             viewMat.M11 = col0.x; viewMat.M21 = col0.y; viewMat.M31 = col0.z; viewMat.M41 = 0;
             viewMat.M12 = col1.x; viewMat.M22 = col1.y; viewMat.M32 = col1.z; viewMat.M42 = 0;
             viewMat.M13 = col2.x; viewMat.M23 = col2.y; viewMat.M33 = col2.z; viewMat.M43 = 0;
-            viewMat.M14 = translation.x; viewMat.M24 = translation.y; viewMat.M34 = translation.z; viewMat.M44 = 0;
+            viewMat.M14 = translation.x; viewMat.M24 = translation.y; viewMat.M34 = translation.z; viewMat.M44 = 1.0f;
 
         }
         public static void gluPerspective(ref float angleOfView,
@@ -439,26 +461,26 @@ namespace Goxlap.src.Goxlap
             l = -nearWidth; r = nearWidth;
             b = -nearHeight; t = nearHeight;
         }
-        public static void gluPerspective(ref System.Numerics.Matrix4x4 matrix, ref float fovyInDegrees, float aspectRatio,
-        float znear, float zfar, bool flip_fov){
+        public static void gluPerspective(ref System.Numerics.Matrix4x4 matrix, ref float p_fovy_degrees, float p_aspect,
+        float p_z_near, float p_z_far, bool flip_fov){
             if(flip_fov){
-                fovyInDegrees = get_fovy(fovyInDegrees,1.0f/aspectRatio);
+                p_fovy_degrees = get_fovy(p_fovy_degrees,1.0f/p_aspect);
             }
             float sine, cotangent, deltaZ;
-	        float radians = fovyInDegrees / 2.0f * Mathf.Pi / 180.0f;
-            deltaZ = zfar - znear;
+	        float radians = p_fovy_degrees / 2.0f * Mathf.Pi / 180.0f;
+            deltaZ = p_z_far - p_z_near;
 	        sine = Mathf.Sin(radians);
-            if ((deltaZ == 0) || (sine == 0) || (aspectRatio == 0)) {
+            if ((deltaZ == 0) || (sine == 0) || (p_aspect == 0)) {
 		        return;
 	        }
 	        cotangent = Mathf.Cos(radians) / sine;
             matrix = System.Numerics.Matrix4x4.Identity;
 
-            matrix.M11 = cotangent / aspectRatio;
+            matrix.M11 = cotangent / p_aspect;
             matrix.M22 = cotangent;
-            matrix.M33 = -(zfar + znear) / deltaZ;
-            matrix.M34 = -1;
-            matrix.M43 = -2 * znear * zfar / deltaZ;
+            matrix.M33 = -(p_z_far + p_z_near) / deltaZ;
+            matrix.M43 = -1;
+            matrix.M34 = -2 * p_z_near * p_z_far / deltaZ;
             matrix.M44 = 0;
         }
         static float get_fovy(float fovx,float aspect){

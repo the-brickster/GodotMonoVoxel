@@ -32,7 +32,6 @@ func _ready():
 	camPosText = self.get_node("HUDNode/HUDCanvas/CamPosText")
 	
 	
-	
 func _enter_tree():
 	horizontalFOV = fov
 	$HUDNode/HUDCanvas/ShaderMenu/CheckButton.pressed = false
@@ -54,7 +53,6 @@ func _enter_tree():
 	$HUDNode/Barrel.material.set_shader_param("cylindricalRatio",cylindricalRatio)
 	
 	
-
 
 func _input(event):
 	# Mouse look (effective only if the mouse is captured)

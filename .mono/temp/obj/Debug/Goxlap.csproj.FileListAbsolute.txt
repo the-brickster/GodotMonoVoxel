@@ -1,0 +1,15 @@
+D:\Documents\Programming\Godot Engine\Godot3.0_Mono_Projects\Goxlap\bin\Debug\Goxlap.dll
+D:\Documents\Programming\Godot Engine\Godot3.0_Mono_Projects\Goxlap\bin\Debug\Goxlap.pdb
+D:\Documents\Programming\Godot Engine\Godot3.0_Mono_Projects\Goxlap\bin\Debug\System.Buffers.dll
+D:\Documents\Programming\Godot Engine\Godot3.0_Mono_Projects\Goxlap\bin\Debug\System.Memory.dll
+D:\Documents\Programming\Godot Engine\Godot3.0_Mono_Projects\Goxlap\bin\Debug\System.Numerics.Vectors.dll
+D:\Documents\Programming\Godot Engine\Godot3.0_Mono_Projects\Goxlap\bin\Debug\System.Runtime.CompilerServices.Unsafe.dll
+D:\Documents\Programming\Godot Engine\Godot3.0_Mono_Projects\Goxlap\bin\Debug\System.Buffers.xml
+D:\Documents\Programming\Godot Engine\Godot3.0_Mono_Projects\Goxlap\bin\Debug\System.Memory.xml
+D:\Documents\Programming\Godot Engine\Godot3.0_Mono_Projects\Goxlap\bin\Debug\System.Numerics.Vectors.xml
+D:\Documents\Programming\Godot Engine\Godot3.0_Mono_Projects\Goxlap\bin\Debug\System.Runtime.CompilerServices.Unsafe.xml
+D:\Documents\Programming\Godot Engine\Godot3.0_Mono_Projects\Goxlap\.mono\temp\obj\Debug\Goxlap.csprojAssemblyReference.cache
+D:\Documents\Programming\Godot Engine\Godot3.0_Mono_Projects\Goxlap\.mono\temp\obj\Debug\Goxlap.csproj.CoreCompileInputs.cache
+D:\Documents\Programming\Godot Engine\Godot3.0_Mono_Projects\Goxlap\.mono\temp\obj\Debug\Goxlap.csproj.CopyComplete
+D:\Documents\Programming\Godot Engine\Godot3.0_Mono_Projects\Goxlap\.mono\temp\obj\Debug\Goxlap.dll
+D:\Documents\Programming\Godot Engine\Godot3.0_Mono_Projects\Goxlap\.mono\temp\obj\Debug\Goxlap.pdb

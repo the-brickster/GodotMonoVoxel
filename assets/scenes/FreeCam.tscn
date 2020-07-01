@@ -101,8 +101,10 @@ texture = ExtResource( 2 )
 expand = true
 
 [node name="HUDCanvas" type="ReferenceRect" parent="HUDNode"]
-margin_right = 1024.0
-margin_bottom = 600.0
+margin_left = 0.0510406
+margin_top = -0.102112
+margin_right = 1024.05
+margin_bottom = 599.898
 __meta__ = {
 "_edit_use_anchors_": false
 }
@@ -207,11 +209,13 @@ step = 0.1
 value = 0.3
 ticks_on_borders = true
 
-[node name="Node2D" type="Node2D" parent="."]
+[node name="RasterCanvas" type="Node2D" parent="."]
 
-[node name="Polygon2D" type="Polygon2D" parent="Node2D"]
-position = Vector2( 77, 430 )
-polygon = PoolVector2Array( 0, 0, 6, 0, 6, 6, 0, 6 )
+[node name="Center" type="Polygon2D" parent="RasterCanvas"]
+position = Vector2( 151.073, 470.715 )
+invert_enable = true
+invert_border = 1.0
+polygon = PoolVector2Array( 0, 0, 10, 0, 10, 10, 0, 10 )
 [connection signal="text_changed" from="HUDNode/HUDCanvas/ShaderMenu/BarrelPower" to="." method="_on_BarrelPower_text_changed"]
 [connection signal="value_changed" from="HUDNode/HUDCanvas/ShaderMenu/FOVSlider" to="." method="_on_FOVSlider_value_changed"]
 [connection signal="pressed" from="HUDNode/HUDCanvas/ShaderMenu/CheckButton" to="." method="_on_CheckButton_pressed"]
