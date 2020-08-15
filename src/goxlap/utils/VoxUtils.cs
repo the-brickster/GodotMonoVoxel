@@ -1,14 +1,23 @@
 using System;
+using System.Diagnostics;
+using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
 
 namespace Goxlap.src.Goxlap.utils
 {
+    public struct Ray
+    {
+        public Vector3 rayOrigin;
+        public Vector3 rayDir;
+        public Vector3 invDirection;
+    }
     public struct BoundingRect{
         public Vector2 loc;
         public Vector2 extent;
 
+        public Vector2 max;
         public float x{
             get {return loc.X;}
             set {loc.X = x;}
@@ -25,13 +34,18 @@ namespace Goxlap.src.Goxlap.utils
             get {return extent.Y;}
             set {extent.Y = height;}
         }
-        public BoundingRect(Vector2 loc,Vector2 extent){
-            this.loc = loc;
-            this.extent =  Vector2.Abs(loc - extent);
+        public Vector2 min{
+            get{return loc;}
+        }
+        public BoundingRect(Vector2 min,Vector2 max){
+            this.loc = min;
+            this.extent =  Vector2.Abs(min - max);
+            this.max = max;
         }
         public BoundingRect(float x, float y, float width, float height){
             this.loc.X = x; this.loc.Y = y;
             this.extent.X = width; this.extent.Y = height;
+            this.max = loc+extent;
         }
         public static bool IntersectsRect(BoundingRect rect1, BoundingRect rect2){
             return (rect1.x < rect2.x + rect2.width &&
@@ -41,6 +55,32 @@ namespace Goxlap.src.Goxlap.utils
         }
         public override string ToString(){
             return "X: "+x+", Y: "+y+", Width: "+extent.X+", Height: "+extent.Y;
+        }
+        public override bool Equals(object ob){
+            if(typeof(BoundingRect) != ob.GetType()){
+                return false;
+            }
+            BoundingRect other = (BoundingRect)ob;
+            return this.loc == other.loc && this.extent == other.extent;
+        }
+        public static bool operator ==(BoundingRect lhs, BoundingRect rhs){
+                        // Check for null on left side.
+            if (Object.ReferenceEquals(lhs, null))
+            {
+                if (Object.ReferenceEquals(rhs, null))
+                {
+                    // null == null = true.
+                    return true;
+                }
+
+                // Only the left side is null.
+                return false;
+            }
+            // Equals handles case of null on right side.
+            return lhs.Equals(rhs);
+        }
+        public static bool operator !=(BoundingRect lhs, BoundingRect rhs){
+            return !(lhs == rhs);
         }
     }
     public struct BoundSphere{
@@ -65,13 +105,28 @@ namespace Goxlap.src.Goxlap.utils
         }
         
     }
+    /// <summary>
+    /// AABB: Axis Aligned Bounding Box used for bounds calculations of 3d spatial objects
+    /// </summary>
     public struct AABB
     {
         public Vector3 min;
         public Vector3 max;
         public Vector3 size;
         public Vector3 center;
+        /// <summary>
+        /// Constructor to create an AABB from a center point and an extend (size)
+        /// </summary>
+        /// <param name="center">Center point</param>
+        /// <param name="extent">Size</param>
+        public AABB (Godot.Vector3 center, Godot.Vector3 extent){
+            this.size = extent.toNumericVector3();
+            Vector3 halfSize = size/2.0f;
+            this.center = center.toNumericVector3();
+            this.min = this.center - halfSize;
+            this.max = this.center + halfSize;
 
+        }
         public AABB(Vector3 min, Vector3 max){
             this.min = min;
             this.max = max;
@@ -80,6 +135,13 @@ namespace Goxlap.src.Goxlap.utils
             this.size.Y = Math.Abs(this.size.Y);
             this.size.Z = Math.Abs(this.size.Z);
             this.center = min+(size/2.0f);
+        }
+        public void Update(Godot.Vector3 center, Godot.Vector3 extent){
+            this.size = extent.toNumericVector3();
+            Vector3 halfSize = size/2.0f;
+            this.center = center.toNumericVector3();
+            this.min = this.center - halfSize;
+            this.max = this.center + halfSize;
         }
         public bool isPointInsideAABB(Vector3 point)
         {
@@ -127,6 +189,7 @@ namespace Goxlap.src.Goxlap.utils
             matrix.M34 = -2 * p_z_near * p_z_far / deltaZ;
             matrix.M44 = 0;
         }
+
         static float get_fovy(float fovx,float aspect){
             return Godot.Mathf.Rad2Deg(Godot.Mathf.Atan(aspect * Godot.Mathf.Tan(Godot.Mathf.Deg2Rad(fovx) * 0.5f)) * 2.0f);
         }
@@ -141,6 +204,22 @@ namespace Goxlap.src.Goxlap.utils
             Vector3 val = new Vector3(vec.x,vec.y,vec.z);
             return val;
         }
+        
+        /// <summary>
+        /// Safely invert a float without running into divide by zero errors
+        /// </summary>
+        /// <param name="x">Float to inverse</param>
+        /// <returns>Inverted Float</returns>
+        public static float safeInverse(float x) { return (x == 0.0f) ? 1e12f : (1.0f / x); }
+
+        /// <summary>
+        /// Safely invert a vector without running into a divide by zero error
+        /// </summary>
+        /// <param name="v">Vector to invert</param>
+        /// <returns>Inverted Vector</returns>
+        public static Vector3 safeInverse(Vector3 v){
+            return new Vector3(safeInverse(v.X),safeInverse(v.Y),safeInverse(v.Z));
+        }
 
         /// <summary>
         /// Takes the max of the Vector2 values and returns the resulting vector
@@ -148,6 +227,7 @@ namespace Goxlap.src.Goxlap.utils
         /// <param name="curr">The current Vector2</param>
         /// <param name="other">The Vector2 being compared against</param>
         /// <returns>The vector with the max values of the two vectors</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Godot.Vector2 maxLocal(this Godot.Vector2 curr, Godot.Vector2 other){
             curr.x = other.x > curr.x ? other.x : curr.x;
             curr.y = other.y > curr.y ? other.y : curr.y;
@@ -160,6 +240,7 @@ namespace Goxlap.src.Goxlap.utils
         /// <param name="curr">The current Vector2</param>aram>
         /// <param name="other">The Vector2 being compared against</param>param>
         /// <returns>The vector with the max values of the two vectors</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Godot.Vector2 minLocal(this Godot.Vector2 curr, Godot.Vector2 other){
             curr.x = other.x < curr.x ? other.x : curr.x;
             curr.y = other.y < curr.y ? other.y : curr.y;
@@ -173,6 +254,7 @@ namespace Goxlap.src.Goxlap.utils
         /// <param name="curr">The current Vector3</param>
         /// <param name="other">The Vector3 being compared against</param>
         /// <returns>The vector with the min values of the two vectors</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Godot.Vector3 maxLocal(this Godot.Vector3 curr, Godot.Vector3 other){
             curr.x = other.x > curr.x ? other.x : curr.x;
             curr.y = other.y > curr.y ? other.y : curr.y;
@@ -186,6 +268,7 @@ namespace Goxlap.src.Goxlap.utils
         /// <param name="curr">The current Vector3</param></param>
         /// <param name="other">The Vector3 being compared against</param>></param>
         /// <returns>The vector with the max values of the two vectors</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Godot.Vector3 minLocal(this Godot.Vector3 curr, Godot.Vector3 other){
             curr.x = other.x < curr.x ? other.x : curr.x;
             curr.y = other.y < curr.y ? other.y : curr.y;
@@ -206,6 +289,20 @@ namespace Goxlap.src.Goxlap.utils
                 position.X * matrix.M21 + position.Y * matrix.M22 + position.Z * matrix.M23 + matrix.M24,
                 position.X * matrix.M31 + position.Y * matrix.M32 + position.Z * matrix.M33 + matrix.M34);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Godot.Vector3 xFormNumeric(Godot.Transform transform, Vector3 position){
+            Godot.Vector3 origin = transform.origin;
+            
+            Vector3 row0 = new Vector3(transform.basis.Row0.x,transform.basis.Row0.y,transform.basis.Row0.z) ;
+            Vector3 row1 = new Vector3(transform.basis.Row1.x,transform.basis.Row1.y,transform.basis.Row1.z) ;
+            Vector3 row2 = new Vector3(transform.basis.Row2.x,transform.basis.Row2.y,transform.basis.Row2.z) ;
+            return new Godot.Vector3(
+                Vector3.Dot(row0,position)+origin.x,
+                Vector3.Dot(row1,position)+origin.y,
+                Vector3.Dot(row2,position)+origin.z
+            );
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Godot.Plane xFromPlane(this Godot.Transform transform, ref Godot.Plane plane){
             Godot.Vector3 point = plane.Normal * plane.D;
             Godot.Vector3 point_dir = point + plane.Normal;
@@ -219,6 +316,34 @@ namespace Goxlap.src.Goxlap.utils
             plane.D = d;
             return new Godot.Plane(normal,d);
         }
+        /// <summary>
+        /// Convert from Godot Transform to System.Numerics.Matrix4x4
+        /// </summary>
+        /// <param name="viewTrans">Godot Transform</param>
+        /// <returns></returns>
+        public static Matrix4x4 viewTransToMat4x4(this Godot.Transform viewTrans){
+            Matrix4x4 viewMatrix = new Matrix4x4();
+            Godot.Vector3 position = viewTrans.origin;
+            viewMatrix.M14 = position.x;
+            viewMatrix.M24 = position.y;
+            viewMatrix.M34 = position.z;
+            viewMatrix.M44 = 1.0f;
+
+            viewMatrix.M11 = viewTrans.basis.Row0.x;
+            viewMatrix.M12 = viewTrans.basis.Row0.y;
+            viewMatrix.M13 = viewTrans.basis.Row0.z;
+            
+            viewMatrix.M21 = viewTrans.basis.Row1.x;
+            viewMatrix.M22 = viewTrans.basis.Row1.y;
+            viewMatrix.M23 = viewTrans.basis.Row1.z;
+
+            viewMatrix.M31 = viewTrans.basis.Row2.x;
+            viewMatrix.M32 = viewTrans.basis.Row2.y;
+            viewMatrix.M33 = viewTrans.basis.Row2.z;
+
+            return viewMatrix;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix4x4 multiplyColMaj(this Matrix4x4 value1, Matrix4x4 value2){
             Matrix4x4 m;
             // First Column
@@ -261,13 +386,62 @@ namespace Goxlap.src.Goxlap.utils
 ///     </param> 
 ///     <returns> the W value <returns>
 ///     </summary>     
-        public static float multProj(this Matrix4x4 m, Godot.Vector3 vec, ref Godot.Vector3 store){
+        public static float multProj(Matrix4x4 m, Godot.Vector3 vec, ref Godot.Vector3 store){
             float vx = vec.x, vy = vec.y, vz = vec.z;
             store.x = m.M11 * vx + m.M12 * vy + m.M13 * vz + m.M14;
             store.y = m.M21 * vx + m.M22 * vy + m.M23 * vz + m.M24;
             store.z = m.M31 * vx + m.M32 * vy + m.M33 * vz + m.M34;
             return m.M41 * vx + m.M42 * vy + m.M43 * vz + m.M44;
 
+        }
+        /// <summary>
+        /// mult multiplies a Vector4 about a rotation matrix. The resulting vector is returned and the ref of the store vector.
+        /// </summary>
+        /// <param name="m"> Matrix </param>
+        /// <param name="vec"> Vector4 to multiply </param>
+        /// <param name="store"> Ref Vector4 that is returned and stored </param>
+        /// <returns></returns>
+        public static Vector4 multProj(Matrix4x4 m, Vector4 vec)
+        {
+            var store = new Vector4();
+
+            float vx = vec.X, vy = vec.Y, vz = vec.Z, vw = vec.W;
+            store.X = m.M11 * vx + m.M12 * vy + m.M13 * vz + m.M14 * vw;
+            store.Y = m.M21 * vx + m.M22 * vy + m.M23 * vz + m.M24 * vw;
+            store.Z = m.M31 * vx + m.M32 * vy + m.M33 * vz + m.M34 * vw;
+            store.W = m.M41 * vx + m.M42 * vy + m.M43 * vz + m.M44 * vw;
+
+            return store;
+
+        }
+
+        /// <summary>
+        /// Benchmarking harness for testing code:
+        /// </summary>
+        /// <param name="identifier">User specified identifier of the benchmark being run</param>
+        /// <param name="repetitions">Number of times to run the benchmark</param>
+        /// <param name="action">Function in form of a delegate to run</param>        
+        public static void Measure(string identifier, int repetitions, Action action)
+        {
+        /// <code>
+        /// int repetitions = 5;
+        /// int iterations = 100000;
+
+        /// Measure("myFunction", repetitions, () => {
+        ///     for(int i = 0; i < iterations; ++i) {
+        ///         myFunction();
+        ///     }
+        /// };
+        /// </code>
+            action(); // Warmup.
+            double[] results = new double[repetitions];
+            for (int i = 0; i < repetitions; ++i)
+            {
+                Stopwatch stopwatch = Stopwatch.StartNew();
+                action();
+                results[i] = stopwatch.Elapsed.TotalMilliseconds;
+            }
+            Console.WriteLine($"{identifier} - AVG = {results.Average()}, MIN = {results.Min()}, MAX = {results.Max()}");
         }
     }
 

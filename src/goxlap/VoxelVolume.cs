@@ -375,7 +375,7 @@ namespace Goxlap.src.Goxlap
                         // Console.WriteLine("Mesh AABB {0}",mesh.GetAabb().Position);
                         // Console.WriteLine("AABB custom {0}", chunkArr[i].boundingBox.center.toGDVector3());
                         meshingQueue.Enqueue(m);
-                        meshingQueue.Enqueue(mesh);
+                        // meshingQueue.Enqueue(mesh);
                         this.collection.Add(chunkArr[i]);
                     }
 

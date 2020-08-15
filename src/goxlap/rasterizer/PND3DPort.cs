@@ -1,6 +1,7 @@
 using Godot;
 using Goxlap.src.Goxlap.utils;
 using System;
+using System.Runtime.CompilerServices;
 
 namespace Goxlap.src.Goxlap.rasterizer{
     public class PND3d{
@@ -25,6 +26,9 @@ namespace Goxlap.src.Goxlap.rasterizer{
         private System.Numerics.Matrix4x4 projMatrix = new System.Numerics.Matrix4x4();
 
         public PND3d(Camera camera, Node2D canvas){
+            Console.WriteLine($"Size of AABB struct: {System.Runtime.InteropServices.Marshal.SizeOf(typeof(utils.AABB))}");
+            Console.WriteLine($"Size of Bounding Rect struct: {System.Runtime.InteropServices.Marshal.SizeOf(typeof(utils.BoundingRect))}");
+            Console.WriteLine($"VECTOR TEST: {System.Numerics.Vector.IsHardwareAccelerated}, int count: {System.Numerics.Vector<byte>.Count}");
             this.camera = camera;
             this.canvas = canvas;
             this.screenSize = camera.GetViewport().Size;
@@ -58,10 +62,11 @@ namespace Goxlap.src.Goxlap.rasterizer{
             var width = (int)camera.GetViewport().Size.x;
             var height = (int)camera.GetViewport().Size.y;
 
-            float fovInDegrees = 80;
+            float fovInDegrees = 80f;
             var near = camera.Near;
             var far = camera.Far;
             var imageAspectRatio = width / (float)height;
+            Console.WriteLine($"{camera.Fov} FOV in degrees: {fovInDegrees}");
             GDExtension.gluPerspective(ref projMatrix,ref fovInDegrees,imageAspectRatio,near,far,true);
         }
         
@@ -117,8 +122,90 @@ namespace Goxlap.src.Goxlap.rasterizer{
                 
             }
         }
-        public unsafe void fastBoundSquare(){
-            transform =camera.GetCameraTransform().Inverse() * testBBOX.GlobalTransform;
+        public BoundingRect boundSquare(utils.AABB AABB){
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            Vector3 cen = AABB.center.toGDVector3();
+            Vector3 ext = new Vector3(0.5f,0.5f,0.5f);
+
+            Camera cam = this.camera;
+
+            Vector2 min = cam.UnprojectPosition(new Vector3(cen.x - ext.x, cen.y - ext.y, cen.z - ext.z));
+         Vector2 max = min;
+ 
+ 
+         //0
+         Vector2 point = min;
+         min = new Vector2(min.x >= point.x ? point.x : min.x, min.y >= point.y ? point.y : min.y);
+         max = new Vector2(max.x <= point.x ? point.x : max.x, max.y <= point.y ? point.y : max.y);
+ 
+         //1
+         point = cam.UnprojectPosition(new Vector3(cen.x + ext.x, cen.y - ext.y, cen.z - ext.z));
+         min = new Vector2(min.x >= point.x ? point.x : min.x, min.y >= point.y ? point.y : min.y);
+         max = new Vector2(max.x <= point.x ? point.x : max.x, max.y <= point.y ? point.y : max.y);
+ 
+ 
+         //2
+         point = cam.UnprojectPosition(new Vector3(cen.x - ext.x, cen.y - ext.y, cen.z + ext.z));
+         min = new Vector2(min.x >= point.x ? point.x : min.x, min.y >= point.y ? point.y : min.y);
+         max = new Vector2(max.x <= point.x ? point.x : max.x, max.y <= point.y ? point.y : max.y);
+ 
+         //3
+         point = cam.UnprojectPosition(new Vector3(cen.x + ext.x, cen.y - ext.y, cen.z + ext.z));
+         min = new Vector2(min.x >= point.x ? point.x : min.x, min.y >= point.y ? point.y : min.y);
+         max = new Vector2(max.x <= point.x ? point.x : max.x, max.y <= point.y ? point.y : max.y);
+ 
+         //4
+         point = cam.UnprojectPosition(new Vector3(cen.x - ext.x, cen.y + ext.y, cen.z - ext.z));
+         min = new Vector2(min.x >= point.x ? point.x : min.x, min.y >= point.y ? point.y : min.y);
+         max = new Vector2(max.x <= point.x ? point.x : max.x, max.y <= point.y ? point.y : max.y);
+ 
+         //5
+         point = cam.UnprojectPosition(new Vector3(cen.x + ext.x, cen.y + ext.y, cen.z - ext.z));
+         min = new Vector2(min.x >= point.x ? point.x : min.x, min.y >= point.y ? point.y : min.y);
+         max = new Vector2(max.x <= point.x ? point.x : max.x, max.y <= point.y ? point.y : max.y);
+ 
+         //6
+         point = cam.UnprojectPosition(new Vector3(cen.x - ext.x, cen.y + ext.y, cen.z + ext.z));
+         min = new Vector2(min.x >= point.x ? point.x : min.x, min.y >= point.y ? point.y : min.y);
+         max = new Vector2(max.x <= point.x ? point.x : max.x, max.y <= point.y ? point.y : max.y);
+ 
+         //7
+         point = cam.UnprojectPosition(new Vector3(cen.x + ext.x, cen.y + ext.y, cen.z + ext.z));
+         min = new Vector2(min.x >= point.x ? point.x : min.x, min.y >= point.y ? point.y : min.y);
+         max = new Vector2(max.x <= point.x ? point.x : max.x, max.y <= point.y ? point.y : max.y);
+         watch.Stop();
+         
+        var elapsedMs = watch.Elapsed.TotalMilliseconds;
+         Console.WriteLine($"Regular BBox, min: {min}, max: {max}, elapsed ms: {elapsedMs}");
+         BoundingRect bounding = new BoundingRect(min.toNumericVector2(),max.toNumericVector2());
+         return bounding;
+        //  Vector2 diff = min - max;
+        //     float diffX = Mathf.Abs(diff.x);
+        //     float diffy = Mathf.Abs(diff.y);
+        //     Vector2[] points = {
+        //         new Vector2(0f,0f),
+        //         new Vector2(diffX,0f),
+        //         new Vector2(diffX,diffy),
+        //         new Vector2(0f,diffy)
+        //     };
+            
+        //     boundSq.Polygon = points;
+        //     boundSq.Position = min;
+            
+        //     if(boundSq.IsInsideTree()){
+        //         boundSq.Update();
+        //     }
+        //     else{
+        //         canvas.AddChild(boundSq);
+        //     }
+        }
+        public unsafe void fastBoundSquare(Transform camTrans){
+            transform =camTrans;
+            // var watch = System.Diagnostics.Stopwatch.StartNew();
+            
+            
+            // Console.WriteLine($"{camera.Fov} FOV in degrees: {80}");
+            
             //------------------
             // Set matrix values
             //------------------
@@ -134,7 +221,7 @@ namespace Goxlap.src.Goxlap.rasterizer{
             m[7] = transform.basis.Column2.y;
             m[8] = transform.basis.Column2.z;
 
-            Vector3 pos = transform.origin;
+            Vector3 pos = transform.Xform(testBBOX.GetGlobalTransform().origin);
 
             float ox0 = Convert.ToInt32(m[0]*pos.z >= m[2]*pos.x) * 1-0.5f;
             float oy0 = Convert.ToInt32(m[3]*pos.z >= m[5]*pos.x) * 1-0.5f;
@@ -175,7 +262,7 @@ namespace Goxlap.src.Goxlap.rasterizer{
             Vector2 tmp3 = viewToScreenSpace(tmpX2,tmpY2,tmpZ2);
             Vector2 tmp4 = viewToScreenSpace(tmpX3,tmpY3,tmpZ3);
 
-            Console.WriteLine($"ox0: {ox0}, oy0: {oy0}, oz0: {oz0}, ox1: {ox1}, oy1: {oy1}, oz1: {oz1}");
+            // Console.WriteLine($"ox0: {ox0}, oy0: {oy0}, oz0: {oz0}, ox1: {ox1}, oy1: {oy1}, oz1: {oz1}");
 
             Vector2 scrnMin = Vector2.Inf;
             scrnMin = scrnMin.minLocal(tmp1);
@@ -199,7 +286,10 @@ namespace Goxlap.src.Goxlap.rasterizer{
             // scrnMax = scrnMax.maxLocal(tmp2);
             // scrnMax = scrnMax.maxLocal(tmp3);
             // scrnMax = scrnMax.maxLocal(tmp4);
-            
+            // watch.Stop();
+            // var elapsedMs = watch.Elapsed.TotalMilliseconds;
+            // Console.WriteLine($"Fast BBox method, min: {scrnMin}, max: {scrnMax}, elapsed ms: {elapsedMs}");
+            // Console.WriteLine($"ScreenMax {scrnMax}, ScreenMin {scrnMin}");
             Vector2 diff = scrnMax - scrnMin;
             float diffX = Mathf.Abs(diff.x);
             float diffy = Mathf.Abs(diff.y);
@@ -222,12 +312,13 @@ namespace Goxlap.src.Goxlap.rasterizer{
 
         }
 
+        // [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector2 viewToScreenSpace(float x, float y, float z){
             
             Vector3 viewPos = new Vector3(x,y,z);
             Vector3 scrnPos = new Vector3();
 
-            float w = projMatrix.multProj(viewPos,ref scrnPos);
+            float w = GDExtension.multProj(projMatrix,viewPos,ref scrnPos);
             scrnPos /= w;
             
 

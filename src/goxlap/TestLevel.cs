@@ -1,10 +1,14 @@
 using Godot;
 using Goxlap.src.Goxlap.utils;
 using System;
+using HWVec = System.Numerics;
 
 namespace Goxlap.src.Goxlap
 {
+    using System.Diagnostics;
+    using System.Linq;
     using global::Goxlap.src.Goxlap.rasterizer;
+    using global::Goxlap.src.Goxlap.tests;
     using utils;
     public class TestLevel : Spatial
     {
@@ -22,6 +26,9 @@ namespace Goxlap.src.Goxlap
         MeshInstance cubeBBOX;
 
         PND3d pndCreator;
+        RasterizerPipeline rasterizer;
+        utils.AABB testAABB;
+        
         public override void _Ready()
         {
 
@@ -31,6 +38,7 @@ namespace Goxlap.src.Goxlap
             colorImage.SetFlags(16);
             // var heightImage = (Texture)GD.Load(@"res://assets/textures/test_map_texture/D2.png");
             Console.WriteLine("----------------------------------This is a test {0} ---", heightImage.GetData().GetData().Length);
+            
             volumeBase = new VoxelVolume(64, 64, 64, 32, 0.125f, @"res://assets/shaders/splatvoxel.shader", new HeightMapPopulator(colorImage.GetData(), heightImage.GetData()), cam);
             // this.AddChild(volumeBase);
 
@@ -61,19 +69,36 @@ namespace Goxlap.src.Goxlap
             int i = (0xFF << (1*8))^0xFF;
             poly.Color = new Color(i);
 
-            Vector2 tmpVec = -Vector2.Inf;
-            Console.WriteLine($"Vector before: {tmpVec}");
-            tmpVec=tmpVec.maxLocal(new Vector2(1,3));
-            Console.WriteLine($"Vector after: {tmpVec}");
+            rasterizer = new RasterizerPipeline(cam);
+            testAABB = new AABB(cubeBBOX.GetGlobalTransform().origin,new Vector3(1,1,1));
+            
+            GDScript gdClass = (GDScript)GD.Load(@"res://src/scripts/debug/DrawLine3D.gd");
+            var lineDrawer = (Node2D)gdClass.New();
+            this.AddChild(lineDrawer);
+            rasterizer.lineDrawer = lineDrawer;
 
+            RasterizerTests unitTests = new RasterizerTests(rasterizer,pndCreator);
+            unitTests.TestDriver();
+            // var from = cam.ProjectRayOrigin(new Vector2(511,198));
+            // // var to = cam.ProjectRayNormal(new Vector2(511,198));
+            // var to = new Vector3(-0.001638866f,0.3048292f, -1f)*1000f;
+            // Console.WriteLine($"Start: {from}, to: {to}");
+            // lineDrawer.Call("DrawRay",from,to,new Color(1,0,0));
+            // lineDrawer.Call("DrawRay",new Vector3(0,0,10),new Vector3(0,0,-21),new Color(0,1,0));
         }
         
-        //  // Called every frame. 'delta' is the elapsed time since the previous frame.
+        // Called every frame. 'delta' is the elapsed time since the previous frame.
         public override void _Process(float delta)
         {
             // pndCreator.drawZenithBars();
-            pndCreator.fastBoundSquare();
+            testAABB.Update(cubeBBOX.GetGlobalTransform().origin,new Vector3(1,1,1));
+            pndCreator.fastBoundSquare(cam.GetCameraTransform().Inverse());
+            rasterizer.UpdateViewParameters(80f);
+            rasterizer.CreateBoundingRect(testAABB);
+            // pndCreator.boundSquare();
         }
+        
+
     }
 
 }

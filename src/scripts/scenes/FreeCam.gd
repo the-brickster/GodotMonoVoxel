@@ -91,7 +91,7 @@ func _process(delta):
 	if(Input.is_action_pressed("sprint")):
 		move_speed = sprint_move_speed*2.0
 	elif(Input.is_action_just_released("sprint")):
-		move_speed = 2.0
+		move_speed = 1
 		print("released "+str(move_speed))
 	
 	if Input.is_action_pressed("walk_left"):
@@ -120,8 +120,8 @@ func _process(delta):
 	motion = motion.normalized()
 
 	# Speed modifier
-	if Input.is_action_pressed("move_speed"):
-		motion *= 2
+#	if Input.is_action_pressed("move_speed"):
+#		motion *= 2
 
 	# Rotate the motion based on the camera angle
 	motion = motion \
