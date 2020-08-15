@@ -98,6 +98,10 @@ void fragment() {
 	DEPTH = 1.0f * win_depth + 0.0f;
 	
 	ALBEDO =color;
+
+	if(CAMERA_MATRIX[0].x <= 2f && CAMERA_MATRIX[0].x >= 1.7f){
+		ALBEDO = vec3(0,1,0);
+	}
 	
 	
 //	ALBEDO = texture(SCREEN_TEXTURE,POINT_COORD).rgb;
